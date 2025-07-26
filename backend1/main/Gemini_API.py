@@ -1,7 +1,12 @@
 import google.generativeai as genai
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
 
 # Khóa API của bạn từ bước 1
-GOOGLE_API_KEY = "AIzaSyCqSU24Z2TgtLliBsrhJoJCJ0fSO22VBeQ"
+GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 genai.configure(api_key=GOOGLE_API_KEY)
 
 # Chọn model: Gemini 1.5 Flash hoặc Gemini 1.5 Pro

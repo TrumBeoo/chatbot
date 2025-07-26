@@ -1,9 +1,14 @@
 #nhập
 import requests
+import os
+from dotenv import load_dotenv
 
-url = "https://api.groq.com/openai/v1/chat/completions"
+load_dotenv()
+   
+GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
+GROQ_API_KEY = "your_api_key"  # Thay bằng key thật
 headers = {
-    "Authorization": "Bearer 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",  # thay bằng key thật
+    "Authorization": f"Bearer {GROQ_API_KEY}",  # Thay bằng key thật
     "Content-Type": "application/json"
 }
 while True:
@@ -22,7 +27,7 @@ while True:
             "max_tokens": 300
         }
 
-        response = requests.post(url, headers=headers, json=data)
+        response = requests.post(GROQ_API_URL, headers=headers, json=data)
         #print(response.json()["choices"][0]["message"]["content"])
         robot_brain = response.json()["choices"][0]["message"]["content"]
         print("Chatbot: " + robot_brain)
@@ -46,10 +51,11 @@ import time
 import os
 
 import requests
-
-url = "https://api.groq.com/openai/v1/chat/completions"
+   
+GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
+GROQ_API_KEY = "your_api_key"  # Thay bằng key thật
 headers = {
-    "Authorization": "Bearer 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",  # thay bằng key thật
+    "Authorization": f"Bearer {GROQ_API_KEY}",  # Thay bằng key thật
     "Content-Type": "application/json"
 }
 
@@ -88,7 +94,7 @@ while True:
             "max_tokens": 300
         }
 
-        response = requests.post(url, headers=headers, json=data)
+        response = requests.post(GROQ_API_URL, headers=headers, json=data)
         #print(response.json()["choices"][0]["message"]["content"])
         robot_brain = response.json()["choices"][0]["message"]["content"]
         print("Chatbot: " + robot_brain)
@@ -138,11 +144,13 @@ import os
 import requests
 import langdetect
 from langdetect import detect
-import tempfile
-
-url = "https://api.groq.com/openai/v1/chat/completions"
+import tempfile\
+    
+    
+GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
+GROQ_API_KEY = "your_api_key"  # Thay bằng key thật
 headers = {
-    "Authorization": "Bearer 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",  # Thay bằng key thật
+    "Authorization": f"Bearer {GROQ_API_KEY}",  # Thay bằng key thật
     "Content-Type": "application/json"
 }
 
@@ -262,7 +270,7 @@ def get_ai_response(user_input, detected_lang):
         }
 
         print("🤖 Đang gọi AI...")
-        response = requests.post(url, headers=headers, json=data)
+        response = requests.post(GROQ_API_URL, headers=headers, json=data)
         if response.status_code == 200:
             content = response.json()["choices"][0]["message"]["content"]
             

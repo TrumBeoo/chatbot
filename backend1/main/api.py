@@ -12,6 +12,9 @@ import logging
 from werkzeug.utils import secure_filename
 import uuid
 import io
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = Flask(__name__)
 CORS(app)

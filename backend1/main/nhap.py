@@ -1,14 +1,17 @@
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import requests
+import os
+from dotenv import load_dotenv
 
+load_dotenv()
 
 app = Flask(__name__)
 CORS(app)  # Cho phép cross-origin requests
 
 # Cấu hình Groq API
 GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
-GROQ_API_KEY = "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"  # thay bằng key thật
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")  # thay bằng key thật
 
 headers = {
     "Authorization": f"Bearer {GROQ_API_KEY}",

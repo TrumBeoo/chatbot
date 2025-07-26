@@ -21,3 +21,13 @@
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+
+.env
+
+# ignore frontend
+frontend/.env
+
+# ignore backend
+backend/.env
+backend1/.env
