@@ -1,0 +1,89 @@
+
+AIzaSyCqSU24Z2TgtLliBsrhJoJCJ0fSO22VBeQ
+
+key_mixtral: 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
+
+
+1. Tư vấn lộ trình – tour – chi phí theo nhu cầu
+Nội dung	Mô tả triển khai
+🗺️ Gợi ý lịch trình du lịch	Dựa trên ngày đi, ngân sách, sở thích (ví dụ: thiên nhiên, tâm linh, biển...)
+🧮 Tính toán chi phí ước lượng	Gồm vé tham quan, ăn uống, đi lại, lưu trú
+📍 Gợi ý lịch trình theo vùng	Hạ Long 1 ngày, Cô Tô 3 ngày, Uông Bí – Yên Tử 2 ngày...
+🧠 Sử dụng AI để phản hồi tự nhiên	LLM xử lý đầu vào người dùng → tạo kế hoạch cụ thể
+
+🔹 2. Gợi ý món ăn – địa điểm – lễ hội
+Nội dung	Mô tả
+🍲 Gợi ý món ăn đặc sản	Theo địa phương, theo thời gian trong ngày (ăn sáng, trưa...)
+🏞️ Địa điểm tham quan	Theo loại hình: thiên nhiên, tâm linh, giải trí, miễn phí
+🎉 Lễ hội đang diễn ra	Theo thời điểm (trong tháng), theo vị trí du lịch
+🗺️ Bản đồ du lịch	Có thể hiển thị bản đồ Google hoặc sơ đồ du lịch của tỉnh
+
+🔹 3. Đặt dịch vụ qua API
+Dịch vụ	Cách kết nối
+🏨 Đặt phòng khách sạn	Tích hợp API booking (Mytour, Traveloka, API tỉnh nếu có)
+🎫 Đặt vé tham quan	API vé điện tử nếu có (như vé vịnh Hạ Long, Yên Tử...)
+🚗 Đặt xe – taxi	Gợi ý liên kết với Grab, taxi nội tỉnh
+🍽️ Đặt bàn ăn tại nhà hàng	Tùy nhà hàng liên kết – hỗ trợ gửi yêu cầu đặt bàn
+
+🔹 4. Thông tin du lịch thiết yếu
+Nội dung	Mô tả
+🛟 Trung tâm hỗ trợ du khách	Thông tin số điện thoại, bản đồ, địa chỉ
+⛑️ Trạm y tế, cấp cứu	Gợi ý vị trí gần nhất
+📢 Tin tức khẩn cấp	Cảnh báo thời tiết, lễ hội đông người, đường tắc, giá vé tăng...
+📃 Hỏi đáp thường gặp	Giờ mở cửa, thủ tục lên tàu, giá vé tham quan, thuê xe máy,...
+
+
+
+
+
+1. Tìm việc theo nhu cầu
+Tính năng	Mô tả triển khai
+🧠 Gợi ý công việc phù hợp	Dựa trên thông tin người dùng: ngành nghề, kinh nghiệm, trình độ học vấn, khu vực mong muốn
+📍 Gợi ý việc làm gần vị trí	Nếu người dùng chia sẻ vị trí (GPS hoặc khu vực tỉnh thành)
+🔄 Gợi ý cập nhật theo thời gian thực	Tích hợp API hoặc database cập nhật từ Trung tâm dịch vụ việc làm, doanh nghiệp
+
+🔹 2. Trả lời câu hỏi thường gặp
+Câu hỏi	Gợi ý cách xử lý
+"Lương tối thiểu hiện tại là bao nhiêu?"	Sử dụng knowledge base + LLM để trả lời cập nhật
+"Doanh nghiệp có hỗ trợ nhà ở không?"	Lấy từ thông tin chi tiết từng job
+"Thời gian thử việc bao lâu?"	Theo từng ngành nghề, luật lao động
+
+→ Có thể triển khai hệ thống FAQ + Semantic Search hoặc RAG để chatbot tìm và trả lời chính xác.
+
+🔹 3. Nộp CV – Đăng ký phỏng vấn
+Tính năng	Mô tả
+📄 Cho phép người dùng gửi CV	Upload file PDF/Word qua chatbot
+📨 Gửi thông tin về nhà tuyển dụng	Gửi kèm thông tin người dùng + file qua email hoặc API webhook của doanh nghiệp
+📅 Đặt lịch phỏng vấn tự động	Chatbot hỏi thời gian phù hợp → lưu vào MongoDB → doanh nghiệp xác nhận sau
+
+🔹 4. Gợi ý học nghề / đào tạo lại
+Tính năng	Mô tả
+📚 Gợi ý trung tâm đào tạo	Gợi ý nơi học nghề phù hợp: sơ cấp, ngắn hạn
+📈 Lộ trình phát triển nghề	Dựa vào mục tiêu: nâng bậc, chuyển ngành, học online...
+
+
+
+
+1. Tạo chatbot riêng cho doanh nghiệp
+Tính năng	Mô tả
+🎨 Tùy chỉnh giao diện và nội dung	Tên công ty, logo, giới thiệu, câu chào
+🤖 Giao diện tạo luồng hỏi – đáp (không cần code)	Giao diện kéo thả câu hỏi → câu trả lời → hành động
+🔗 Tạo mã nhúng	Nhúng chatbot vào website, Facebook, Zalo OA
+
+🔹 2. Quản lý hồ sơ người dùng – khách hàng
+Tính năng	Mô tả
+🗂️ Danh sách khách hàng tương tác	Lưu lịch sử người chat, nhu cầu, trạng thái xử lý
+📄 Nhận thông tin nộp CV / đặt lịch	Tự động phân loại hồ sơ theo trạng thái
+📤 Tải xuống file CSV	Xuất thông tin khách hàng / ứng viên gửi qua mail
+
+🔹 3. Phân tích hành vi người dùng
+Chức năng	Mô tả
+📊 Thống kê lượt tương tác theo ngày	Biểu đồ line hoặc pie chart
+🔍 Từ khóa được hỏi nhiều nhất	Lọc top 10 câu được hỏi
+📈 Đo lường hiệu quả: tỷ lệ phản hồi, tỷ lệ nộp CV	Dùng để tối ưu hội thoại hoặc nhân sự phụ trách
+
+🔹 4. Tự động học & gợi ý phản hồi tốt hơn
+Hệ thống	Mô tả
+🤖 Học từ dữ liệu người dùng	Phân tích câu hỏi chưa có phản hồi đúng → gợi ý admin cập nhật
+📘 Thêm vào bộ kiến thức nội bộ	Admin nhập FAQ, hướng dẫn xử lý, chính sách... để chatbot học thêm
+
