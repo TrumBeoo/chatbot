@@ -1,6 +1,12 @@
 from pymongo import MongoClient
+import os
+from dotenv import load_dotenv
 
-client = MongoClient("mongodb+srv://TrumBeoo:1xr1R8BRdLafRzTg@trumbeoo.c0hnfng.mongodb.net/?retryWrites=true&w=majority&appName=TrumBeoo")
+load_dotenv()
+MONGO_URI = os.getenv("MONGO_URI")
+
+
+client = MongoClient("MONGO_URI")
 mongo_db = client["chatbot_AI"]
 
 # Expose collections
