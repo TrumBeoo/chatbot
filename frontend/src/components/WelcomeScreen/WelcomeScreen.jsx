@@ -20,6 +20,7 @@ import {
   useToast,
   Divider,
 } from '@chakra-ui/react';
+import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 import { FaLanguage, FaPlay, FaUser, FaUserPlus, FaGoogle, FaFacebook } from 'react-icons/fa';
 import Lottie from 'lottie-react';
 import chatbotAnimation from '../../animations/chatbot.json';
@@ -240,6 +241,24 @@ const WelcomeScreen = ({
       >
         {translations[language].loginWithGoogle || "Đăng nhập với Google"}
       </Button>
+
+      <GoogleOAuthProvider clientId="190165539793-30goun7cnknmfcbv36b6h08asn3g37d1.apps.googleusercontent.com">
+  <GoogleLogin
+    onSuccess={credentialResponse => {
+      const token = credentialResponse.credential;
+      // Gửi token về Flask
+      fetch("http://localhost:5000/api/auth/google", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token }),
+      })
+        .then(res => res.json())
+        .then(data => console.log("Login success:", data))
+        .catch(err => console.error("Login failed", err));
+    }}
+    onError={() => console.log("Login Failed")}
+  />
+</GoogleOAuthProvider>
       
       <Button
         leftIcon={<FaFacebook />}

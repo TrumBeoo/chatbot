@@ -13,9 +13,11 @@ import langdetect
 from langdetect import detect
 import tempfile
 
-url = "https://api.groq.com/openai/v1/chat/completions"
+   
+GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
+GROQ_API_KEY = "your_api_key"  # Thay bằng key thật
 headers = {
-    "Authorization": "Bearer your_api_key",  # Thay bằng key thật
+    "Authorization": f"Bearer {GROQ_API_KEY}",   # Thay bằng key thật
     "Content-Type": "application/json"
 }
 
@@ -136,7 +138,7 @@ def get_ai_response(user_input, detected_lang):
         }
 
         print("🤖 Đang gọi AI...")
-        response = requests.post(url, headers=headers, json=data)
+        response = requests.post(GROQ_API_URL, headers=headers, json=data)
         if response.status_code == 200:
             content = response.json()["choices"][0]["message"]["content"]
             

@@ -4,6 +4,11 @@ import bcrypt
 import datetime
 from functools import wraps
 
+import requests
+from google.oauth2 import id_token
+from google.auth.transport import requests as grequests
+from bson.objectid import ObjectId
+
 api_bp = Blueprint('api', __name__)
 
 class AuthError(Exception):
@@ -171,3 +176,34 @@ def get_chat(user_id):
         "page": page,
         "limit": limit
     }), 200
+    
+    
+auth_bp = Blueprint('auth', __name__)
+
+@auth_bp.route('/api/auth/google', methods=['POST'])
+def google_login():
+    db = current_app.mongo_db
+    data = request.json
+    token = data.get("token")
+    try:
+        idinfo = id_token.verify_oauth2_token(token, grequests.Request())
+        email = idinfo["email"]
+        name = idinfo.get("name", "Người dùng Google")
+        
+        user = db.users.find_one({"email": email})
+        if not user:
+            user = {
+                "name": name,
+                "email": email,
+                "google_id": idinfo["sub"],
+                "created_at": datetime.datetime.utcnow()
+            }
+            db.users.insert_one(user)
+
+        return jsonify({
+            "message": "Đăng nhập Google thành công",
+            "user": {"email": email, "name": name}
+        }), 200
+
+    except Exception as e:
+        return jsonify({"error": f"Google login failed: {str(e)}"}), 400
