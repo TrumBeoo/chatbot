@@ -1,11 +1,15 @@
 import os
 from dataclasses import dataclass
 
+
 @dataclass
 class Config:
     # API Configuration
     GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
     GROQ_API_KEY = os.getenv("GROQ_API_KEY", "your_api_key")  # Đặt trong environment variable
+    GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID')
+    FACEBOOK_APP_ID = os.getenv('FACEBOOK_APP_ID')
+    FACEBOOK_APP_SECRET = os.environ.get('FACEBOOK_APP_SECRET')
     
     # Speech Recognition Configuration
     ENERGY_THRESHOLD = 4000

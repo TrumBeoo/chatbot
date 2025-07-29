@@ -27,7 +27,10 @@ import chatbotAnimation from '../../animations/chatbot.json';
 import { translations } from '../../constants';
 import { slideUp, pulse } from '../../styles/animations';
 
-// Constants
+// Add Google Client ID to your environment config
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "your-google-client-id";
+
+// Constants remain the same
 const INITIAL_FORM_STATE = {
   email: '',
   password: '',
@@ -48,7 +51,8 @@ const WelcomeScreen = ({
   user,
   onLogin,
   onRegister,
-  onLogout 
+  onLogout,
+  onSocialLogin // Add this new prop for social authentication
 }) => {
   // State
   const [showGreeting, setShowGreeting] = useState(false);
@@ -228,7 +232,147 @@ const WelcomeScreen = ({
     </VStack>
   ), [authMode, formData, handleInputChange, language]);
 
+  // In your WelcomeScreen component, make sure the Google success handler is correct:
+const handleGoogleSuccess = useCallback(async (credentialResponse) => {
+  try {
+    console.log('Google login success:', credentialResponse);
+    
+    // Call the parent component's social login handler
+    await onSocialLogin('google', {
+      credential: credentialResponse.credential
+    });
+    
+    showToast(
+      translations[language].loginSuccess || "Đăng nhập thành công!",
+      null,
+      "success"
+    );
+    
+    onClose();
+  } catch (error) {
+    console.error('Google login error:', error);
+    showToast(
+      translations[language].socialLoginError || "Đăng nhập thất bại",
+      error.message,
+      "error"
+    );
+  }
+}, [onSocialLogin, language, showToast, onClose]);
+
+const handleGoogleError = useCallback((error) => {
+  console.error('Google login error:', error);
+  showToast(
+    translations[language].socialLoginError || "Đăng nhập Google thất bại",
+    "Vui lòng thử lại",
+    "error"
+  );
+}, [language, showToast]);
+
+  const handleFacebookLogin = useCallback(async () => {
+    try {
+      // Initialize Facebook SDK if not already done
+      if (!window.FB) {
+        await initializeFacebookSDK();
+      }
+
+      // Perform Facebook login
+      window.FB.login(async (response) => {
+        if (response.authResponse) {
+          try {
+            await onSocialLogin('facebook', {
+              accessToken: response.authResponse.accessToken,
+              userID: response.authResponse.userID
+            });
+            
+            showToast(
+              translations[language].loginSuccess || "Đăng nhập thành công!",
+              null,
+              "success"
+            );
+            
+            onClose();
+          } catch (error) {
+            showToast(
+              translations[language].socialLoginError || "Đăng nhập thất bại",
+              error.message,
+              "error"
+            );
+          }
+        } else {
+          showToast(
+            translations[language].socialLoginError || "Đăng nhập Facebook thất bại",
+            null,
+            "error"
+          );
+        }
+      }, { scope: 'email,public_profile' });
+    } catch (error) {
+      showToast(
+        translations[language].socialLoginError || "Lỗi khởi tạo Facebook SDK",
+        error.message,
+        "error"
+      );
+    }
+  }, [onSocialLogin, language, showToast, onClose]);
+
+  // Initialize Facebook SDK
+  const initializeFacebookSDK = useCallback(() => {
+    return new Promise((resolve) => {
+      // Load Facebook SDK script if not already loaded
+      if (!document.getElementById('facebook-jssdk')) {
+        const script = document.createElement('script');
+        script.id = 'facebook-jssdk';
+        script.src = 'https://connect.facebook.net/en_US/sdk.js';
+        document.body.appendChild(script);
+        
+        script.onload = () => {
+          window.FB.init({
+            appId: import.meta.env.VITE_FACEBOOK_APP_ID,
+            cookie: true,
+            xfbml: true,
+            version: 'v18.0'
+          });
+          resolve();
+        };
+      } else {
+        resolve();
+      }
+    });
+  }, []);
+
+  // Enhanced social buttons rendering
   const renderSocialButtons = useCallback(() => (
+    <VStack spacing={3} width="100%">
+      {/* Google Login Button */}
+      <GoogleLogin
+        onSuccess={handleGoogleSuccess}
+        onError={handleGoogleError}
+        theme="outline"
+        size="large"
+        text="signin_with"
+        shape="rectangular"
+        logo_alignment="left"
+        width="100%"
+      />
+
+      {/* Facebook Login Button */}  
+      <Button
+        leftIcon={<FaFacebook />}
+        colorScheme="facebook"
+        variant="outline"
+        size="lg"
+        width="100%"
+        onClick={handleFacebookLogin}
+        _hover={{ bg: 'blue.50', color: 'blue.500' }}
+        borderColor="blue.500"
+        color="blue.500"
+      >
+        {translations[language].loginWithFacebook || "Đăng nhập với Facebook"}
+      </Button>
+    </VStack>
+  ), [handleGoogleSuccess, handleGoogleError, handleFacebookLogin, language]);
+
+  /*const renderSocialButtons = useCallback(() => (
     <VStack spacing={2} width="100%">
       <Button
         leftIcon={<FaGoogle />}
@@ -256,9 +400,10 @@ const WelcomeScreen = ({
         {translations[language].loginWithFacebook || "Đăng nhập với Facebook"}
       </Button>
     </VStack>
-  ), [handleSocialLogin, language]);
+  ), [handleSocialLogin, language]);*/
 
   return (
+    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
     <Box
       minH="100vh"
       bgImage="url('img/bg.png')"
@@ -480,6 +625,8 @@ const WelcomeScreen = ({
          </ModalHeader>
          <ModalCloseButton />
          <ModalBody pb={6}>
+
+          
            <form onSubmit={handleAuthSubmit}>
              <VStack spacing={4}>
                {renderFormFields()}
@@ -527,6 +674,7 @@ const WelcomeScreen = ({
        </ModalContent>
      </Modal>
    </Box>
+   </GoogleOAuthProvider>
  );
 };
 

@@ -281,7 +281,38 @@ class ChatbotAPI {
   removeDefaultHeader(key) {
     delete this.defaultHeaders[key];
   }
+
+// Social authentication methods
+  async socialLogin(provider, credentials) {
+    const validProviders = ['google', 'facebook'];
+    if (!validProviders.includes(provider)) {
+      throw new Error('Invalid social login provider');
+    }
+
+    if (!credentials || typeof credentials !== 'object') {
+      throw new Error('Social login credentials are required');
+    }
+
+    return this.post(`/auth/${provider}`, credentials);
+  }
+
+  async googleLogin(googleCredential) {
+    if (!googleCredential) {
+      throw new Error('Google credential is required');
+    }
+
+    return this.socialLogin('google', { credential: googleCredential });
+  }
+
+  async facebookLogin(accessToken, userID) {
+    if (!accessToken || !userID) {
+      throw new Error('Facebook access token and user ID are required');
+    }
+
+    return this.socialLogin('facebook', { accessToken, userID });
 }
+}
+
 
 // Create singleton instance
 const chatbotAPI = new ChatbotAPI();
@@ -299,7 +330,10 @@ export const {
   saveChatHistory,
   register,
   login,
-  getAudioUrl
+  getAudioUrl, 
+  socialLogin, 
+  googleLogin, 
+  facebookLogin
 } = chatbotAPI;
 
 // Export error classes
@@ -308,3 +342,4 @@ export { APIError, NetworkError };
 // Export the class and instance
 export { ChatbotAPI };
 export default chatbotAPI;
+// Export the new methods

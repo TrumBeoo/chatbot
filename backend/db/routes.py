@@ -2,7 +2,13 @@ from flask import Blueprint, request, jsonify, current_app
 from bson.objectid import ObjectId
 import bcrypt
 import datetime
+import requests
+import jwt
 from functools import wraps
+
+
+
+
 
 api_bp = Blueprint('api', __name__)
 
@@ -172,3 +178,184 @@ def get_chat(user_id):
         "limit": limit
     }), 200
     
+
+def verify_google_token(credential):
+    """Verify Google OAuth token and return user info"""
+    try:
+        # Google's tokeninfo endpoint to verify the JWT token
+        url = f"https://oauth2.googleapis.com/tokeninfo?id_token={credential}"
+        response = requests.get(url, timeout=10)
+        
+        if response.status_code != 200:
+            raise AuthError("Invalid Google token")
+        
+        user_info = response.json()
+        
+        # Basic validation
+        if not user_info.get('email_verified'):
+            raise AuthError("Google email not verified")
+        
+        return {
+            'email': user_info.get('email'),
+            'name': user_info.get('name'),
+            'google_id': user_info.get('sub'),
+            'picture': user_info.get('picture')
+        }
+        
+    except requests.RequestException as e:
+        raise AuthError(f"Failed to verify Google token: {str(e)}")
+    except Exception as e:
+        raise AuthError(f"Google authentication error: {str(e)}")
+
+def verify_facebook_token(access_token):
+    """Verify Facebook access token and return user info"""
+    try:
+        # Get user info from Facebook Graph API
+        fields = "id,name,email,picture"
+        url = f"https://graph.facebook.com/me?fields={fields}&access_token={access_token}"
+        response = requests.get(url, timeout=10)
+        
+        if response.status_code != 200:
+            raise AuthError("Invalid Facebook token")
+        
+        user_info = response.json()
+        
+        if 'error' in user_info:
+            raise AuthError(f"Facebook API error: {user_info['error']['message']}")
+        
+        return {
+            'email': user_info.get('email'),
+            'name': user_info.get('name'),
+            'facebook_id': user_info.get('id'),
+            'picture': user_info.get('picture', {}).get('data', {}).get('url') if user_info.get('picture') else None
+        }
+        
+    except requests.RequestException as e:
+        raise AuthError(f"Failed to verify Facebook token: {str(e)}")
+    except Exception as e:
+        raise AuthError(f"Facebook authentication error: {str(e)}")
+
+def find_or_create_social_user(db, provider, user_info):
+    """Find existing user or create new one for social login"""
+    email = user_info.get('email')
+    provider_id_field = f"{provider}_id"
+    provider_id = user_info.get(provider_id_field)
+    
+    # First, try to find user by provider ID
+    if provider_id:
+        user = db.users.find_one({provider_id_field: provider_id})
+        if user:
+            # Update last login
+            db.users.update_one(
+                {"_id": user["_id"]}, 
+                {"$set": {
+                    "last_login": datetime.datetime.utcnow(),
+                    "updated_at": datetime.datetime.utcnow()
+                }}
+            )
+            return user
+    
+    # If no user found by provider ID, check by email
+    if email:
+        user = db.users.find_one({"email": email.lower()})
+        if user:
+            # Link this social account to existing user
+            update_data = {
+                "last_login": datetime.datetime.utcnow(),
+                "updated_at": datetime.datetime.utcnow()
+            }
+            if provider_id:
+                update_data[provider_id_field] = provider_id
+            
+            db.users.update_one({"_id": user["_id"]}, {"$set": update_data})
+            return user
+    
+    # Create new user
+    new_user_data = {
+        "name": user_info.get('name', f'{provider.title()} User'),
+        "email": email.lower() if email else None,
+        "auth_provider": provider,
+        "created_at": datetime.datetime.utcnow(),
+        "updated_at": datetime.datetime.utcnow(),
+        "last_login": datetime.datetime.utcnow()
+    }
+    
+    # Add provider-specific ID if available
+    if provider_id:
+        new_user_data[provider_id_field] = provider_id
+    
+    # Add profile picture if available
+    if user_info.get('picture'):
+        new_user_data['profile_picture'] = user_info['picture']
+    
+    result = db.users.insert_one(new_user_data)
+    new_user_data['_id'] = result.inserted_id
+    return new_user_data
+
+@api_bp.route('/auth/google', methods=['POST'])
+@handle_db_errors
+def google_auth():
+    """Google OAuth authentication endpoint"""
+    db = current_app.mongo_db
+    data = request.get_json() or {}
+    
+    # Validate required fields
+    if 'credential' not in data:
+        raise ValueError("Google credential is required")
+    
+    try:
+        # Verify Google token and get user info
+        user_info = verify_google_token(data['credential'])
+        
+        # Find or create user
+        user = find_or_create_social_user(db, 'google', user_info)
+        
+        return jsonify({
+            "message": "Đăng nhập Google thành công",
+            "user": {
+                "id": str(user["_id"]),
+                "name": user["name"],
+                "email": user.get("email"),
+                "profile_picture": user.get("profile_picture"),
+                "auth_provider": user.get("auth_provider", "google")
+            }
+        }), 200
+        
+    except AuthError as e:
+        return jsonify({"error": str(e)}), 401
+    except Exception as e:
+        return jsonify({"error": f"Google authentication failed: {str(e)}"}), 500
+
+@api_bp.route('/auth/facebook', methods=['POST'])
+@handle_db_errors
+def facebook_auth():
+    """Facebook OAuth authentication endpoint"""
+    db = current_app.mongo_db
+    data = request.get_json() or {}
+    
+    # Validate required fields
+    if 'accessToken' not in data:
+        raise ValueError("Facebook access token is required")
+    
+    try:
+        # Verify Facebook token and get user info
+        user_info = verify_facebook_token(data['accessToken'])
+        
+        # Find or create user
+        user = find_or_create_social_user(db, 'facebook', user_info)
+        
+        return jsonify({
+            "message": "Đăng nhập Facebook thành công",
+            "user": {
+                "id": str(user["_id"]),
+                "name": user["name"],
+                "email": user.get("email"),
+                "profile_picture": user.get("profile_picture"),
+                "auth_provider": user.get("auth_provider", "facebook")
+            }
+        }), 200
+        
+    except AuthError as e:
+        return jsonify({"error": str(e)}), 401
+    except Exception as e:
+        return jsonify({"error": f"Facebook authentication failed: {str(e)}"}), 500
