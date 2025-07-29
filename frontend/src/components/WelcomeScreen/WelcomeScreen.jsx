@@ -29,6 +29,7 @@ import { slideUp, pulse } from '../../styles/animations';
 
 // Add Google Client ID to your environment config
 const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "your-google-client-id";
+const FACEBOOK_APP_ID = import.meta.env.VITE_FACEBOOK_APP_ID;
 
 // Constants remain the same
 const INITIAL_FORM_STATE = {
@@ -268,20 +269,93 @@ const handleGoogleError = useCallback((error) => {
   );
 }, [language, showToast]);
 
-  const handleFacebookLogin = useCallback(async () => {
-    try {
-      // Initialize Facebook SDK if not already done
-      if (!window.FB) {
-        await initializeFacebookSDK();
-      }
+  
+  // Thay thế các function liên quan đến Facebook
+const initializeFacebookSDK = useCallback(() => {
+  return new Promise((resolve, reject) => {
+    // Check if Facebook SDK is already loaded
+    if (window.FB) {
+      resolve();
+      return;
+    }
 
-      // Perform Facebook login
-      window.FB.login(async (response) => {
-        if (response.authResponse) {
+    // Validate Facebook App ID
+    if (!FACEBOOK_APP_ID) {
+      reject(new Error('Facebook App ID not configured'));
+      return;
+    }
+
+    // Load Facebook SDK script
+    const script = document.createElement('script');
+    script.id = 'facebook-jssdk';
+    script.src = 'https://connect.facebook.net/en_US/sdk.js';
+    script.async = true;
+    script.defer = true;
+    
+    script.onload = () => {
+      try {
+        window.FB.init({
+          appId: FACEBOOK_APP_ID,
+          cookie: true,
+          xfbml: true,
+          version: 'v19.0' // Latest stable version
+        });
+        
+        // Check login status after init
+        window.FB.getLoginStatus((response) => {
+          console.log('Facebook login status:', response.status);
+          resolve();
+        });
+        
+      } catch (error) {
+        reject(new Error('Failed to initialize Facebook SDK'));
+      }
+    };
+    
+    script.onerror = () => {
+      reject(new Error('Failed to load Facebook SDK script'));
+    };
+    
+    document.body.appendChild(script);
+  });
+}, []);
+
+const handleFacebookLogin = useCallback(async () => {
+  try {
+    showToast(
+      translations[language].loading || "Đang xử lý...",
+      null,
+      "info"
+    );
+
+    // Initialize Facebook SDK
+    await initializeFacebookSDK();
+
+    // Perform Facebook login
+    window.FB.login(async (response) => {
+      try {
+        console.log('Facebook login response:', response);
+        
+        if (!response.authResponse) {
+          throw new Error('Facebook login was cancelled or failed');
+        }
+
+        const { accessToken, userID } = response.authResponse;
+        
+        if (!accessToken || !userID) {
+          throw new Error('Invalid Facebook authentication response');
+        }
+
+        // Get additional user info
+        window.FB.api('/me', { fields: 'name,email,picture.type(large)' }, async (userInfo) => {
           try {
+            console.log('Facebook user info:', userInfo);
+            
+            // Call backend for authentication
             await onSocialLogin('facebook', {
-              accessToken: response.authResponse.accessToken,
-              userID: response.authResponse.userID
+              accessToken: accessToken,
+              userID: userID,
+              userInfo: userInfo // Send additional user info
             });
             
             showToast(
@@ -291,59 +365,45 @@ const handleGoogleError = useCallback((error) => {
             );
             
             onClose();
+            
           } catch (error) {
+            console.error('Backend authentication error:', error);
             showToast(
               translations[language].socialLoginError || "Đăng nhập thất bại",
               error.message,
               "error"
             );
           }
-        } else {
-          showToast(
-            translations[language].socialLoginError || "Đăng nhập Facebook thất bại",
-            null,
-            "error"
-          );
-        }
-      }, { scope: 'email,public_profile' });
-    } catch (error) {
-      showToast(
-        translations[language].socialLoginError || "Lỗi khởi tạo Facebook SDK",
-        error.message,
-        "error"
-      );
-    }
-  }, [onSocialLogin, language, showToast, onClose]);
-
-  // Initialize Facebook SDK
-  const initializeFacebookSDK = useCallback(() => {
-    return new Promise((resolve) => {
-      // Load Facebook SDK script if not already loaded
-      if (!document.getElementById('facebook-jssdk')) {
-        const script = document.createElement('script');
-        script.id = 'facebook-jssdk';
-        script.src = 'https://connect.facebook.net/en_US/sdk.js';
-        document.body.appendChild(script);
+        });
         
-        script.onload = () => {
-          window.FB.init({
-            appId: import.meta.env.VITE_FACEBOOK_APP_ID,
-            cookie: true,
-            xfbml: true,
-            version: 'v18.0'
-          });
-          resolve();
-        };
-      } else {
-        resolve();
+      } catch (error) {
+        console.error('Facebook login processing error:', error);
+        showToast(
+          translations[language].socialLoginError || "Đăng nhập Facebook thất bại",
+          error.message,
+          "error"
+        );
       }
+    }, { 
+      scope: 'email,public_profile',
+      return_scopes: true 
     });
-  }, []);
+    
+  } catch (error) {
+    console.error('Facebook SDK initialization error:', error);
+    showToast(
+      translations[language].socialLoginError || "Lỗi khởi tạo Facebook SDK",
+      error.message || "Vui lòng kiểm tra cấu hình Facebook App ID",
+      "error"
+    );
+  }
+}, [onSocialLogin, language, showToast, onClose, initializeFacebookSDK]);
 
-  // Enhanced social buttons rendering
-  const renderSocialButtons = useCallback(() => (
-    <VStack spacing={3} width="100%">
-      {/* Google Login Button */}
+// Cập nhật renderSocialButtons function
+const renderSocialButtons = useCallback(() => (
+  <VStack spacing={3} width="100%">
+    {/* Google Login Button */}
+    {GOOGLE_CLIENT_ID && (
       <GoogleLogin
         onSuccess={handleGoogleSuccess}
         onError={handleGoogleError}
@@ -354,8 +414,10 @@ const handleGoogleError = useCallback((error) => {
         logo_alignment="left"
         width="100%"
       />
+    )}
 
-      {/* Facebook Login Button */}  
+    {/* Facebook Login Button */}  
+    {FACEBOOK_APP_ID && (
       <Button
         leftIcon={<FaFacebook />}
         colorScheme="facebook"
@@ -366,12 +428,21 @@ const handleGoogleError = useCallback((error) => {
         _hover={{ bg: 'blue.50', color: 'blue.500' }}
         borderColor="blue.500"
         color="blue.500"
+        isDisabled={!FACEBOOK_APP_ID}
       >
         {translations[language].loginWithFacebook || "Đăng nhập với Facebook"}
       </Button>
-    </VStack>
-  ), [handleGoogleSuccess, handleGoogleError, handleFacebookLogin, language]);
-
+    )}
+    
+    {/* Show warning if social login not configured */}
+    {(!GOOGLE_CLIENT_ID && !FACEBOOK_APP_ID) && (
+      <Text fontSize="sm" color="orange.300" textAlign="center">
+        {translations[language].socialLoginNotConfigured || 
+         "Đăng nhập xã hội chưa được cấu hình"}
+      </Text>
+    )}
+  </VStack>
+), [handleGoogleSuccess, handleGoogleError, handleFacebookLogin, language]);
   /*const renderSocialButtons = useCallback(() => (
     <VStack spacing={2} width="100%">
       <Button

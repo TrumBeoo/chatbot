@@ -210,15 +210,38 @@ def verify_google_token(credential):
 def verify_facebook_token(access_token):
     """Verify Facebook access token and return user info"""
     try:
-        # Get user info from Facebook Graph API
-        fields = "id,name,email,picture"
-        url = f"https://graph.facebook.com/me?fields={fields}&access_token={access_token}"
-        response = requests.get(url, timeout=10)
+        # Verify token with Facebook Graph API
+        app_secret = current_app.config.get('FACEBOOK_APP_SECRET') or os.environ.get('FACEBOOK_APP_SECRET')
         
-        if response.status_code != 200:
+        # First, verify the token is valid for our app
+        app_token_url = f"https://graph.facebook.com/oauth/access_token?client_id={current_app.config.get('FACEBOOK_APP_ID')}&client_secret={app_secret}&grant_type=client_credentials"
+        
+        app_token_response = requests.get(app_token_url, timeout=10)
+        if app_token_response.status_code != 200:
+            raise AuthError("Failed to get app access token")
+        
+        app_token = app_token_response.json().get('access_token')
+        
+        # Verify user token
+        verify_url = f"https://graph.facebook.com/debug_token?input_token={access_token}&access_token={app_token}"
+        verify_response = requests.get(verify_url, timeout=10)
+        
+        if verify_response.status_code != 200:
             raise AuthError("Invalid Facebook token")
         
-        user_info = response.json()
+        token_data = verify_response.json()
+        if not token_data.get('data', {}).get('is_valid'):
+            raise AuthError("Facebook token is not valid")
+        
+        # Get user info from Facebook Graph API
+        fields = "id,name,email,picture.type(large)"
+        user_url = f"https://graph.facebook.com/me?fields={fields}&access_token={access_token}"
+        user_response = requests.get(user_url, timeout=10)
+        
+        if user_response.status_code != 200:
+            raise AuthError("Failed to get user info from Facebook")
+        
+        user_info = user_response.json()
         
         if 'error' in user_info:
             raise AuthError(f"Facebook API error: {user_info['error']['message']}")
@@ -340,6 +363,13 @@ def facebook_auth():
     try:
         # Verify Facebook token and get user info
         user_info = verify_facebook_token(data['accessToken'])
+        
+        # Ensure we have at least a name and facebook_id
+        if not user_info.get('facebook_id'):
+            raise AuthError("Unable to get Facebook user ID")
+        
+        if not user_info.get('name'):
+            user_info['name'] = f"Facebook User {user_info['facebook_id'][:8]}"
         
         # Find or create user
         user = find_or_create_social_user(db, 'facebook', user_info)

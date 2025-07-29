@@ -304,12 +304,50 @@ class ChatbotAPI {
     return this.socialLogin('google', { credential: googleCredential });
   }
 
-  async facebookLogin(accessToken, userID) {
-    if (!accessToken || !userID) {
-      throw new Error('Facebook access token and user ID are required');
-    }
+  // Cập nhật facebookLogin method
+async facebookLogin(accessToken, userID, userInfo = null) {
+  if (!accessToken || !userID) {
+    throw new Error('Facebook access token and user ID are required');
+  }
 
-    return this.socialLogin('facebook', { accessToken, userID });
+  const payload = { 
+    accessToken, 
+    userID 
+  };
+  
+  // Include additional user info if available
+  if (userInfo) {
+    payload.userInfo = userInfo;
+  }
+
+  return this.socialLogin('facebook', payload);
+}
+
+// Cập nhật socialLogin method để handle better error messages
+async socialLogin(provider, credentials) {
+  const validProviders = ['google', 'facebook'];
+  if (!validProviders.includes(provider)) {
+    throw new Error(`Invalid social login provider: ${provider}`);
+  }
+
+  if (!credentials || typeof credentials !== 'object') {
+    throw new Error(`${provider} login credentials are required`);
+  }
+
+  try {
+    const response = await this.post(`/auth/${provider}`, credentials);
+    return response;
+  } catch (error) {
+    // Enhanced error handling for social login
+    if (error instanceof APIError) {
+      if (error.status === 401) {
+        throw new Error(`${provider} authentication failed: Invalid credentials`);
+      } else if (error.status === 400) {
+        throw new Error(`${provider} login error: ${error.message}`);
+      }
+    }
+    throw error;
+  }
 }
 }
 
