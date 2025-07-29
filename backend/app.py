@@ -15,7 +15,7 @@ from db import mongo_db
 
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, )
 app.mongo_db = mongo_db
 
 app.register_blueprint(api_bp, url_prefix='/api')
