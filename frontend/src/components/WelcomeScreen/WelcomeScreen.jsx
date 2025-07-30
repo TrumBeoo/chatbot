@@ -361,7 +361,7 @@ const WelcomeScreen = ({
         window.FB.init({
           appId: FACEBOOK_APP_ID,
           cookie: true,
-          xfbml: true,
+          xfbml: false, 
           version: 'v19.0'
         });
 
