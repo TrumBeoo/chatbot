@@ -509,7 +509,7 @@ const handleFacebookLogin = useCallback(async () => {
   const content = (
     <Box
       minH="100vh"
-      bgImage="url('img/bg.png')"
+      bgImage="url('src/img/bg.png')" 
       bgSize="cover"
       bgPosition="center"
       bgRepeat="no-repeat"

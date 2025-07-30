@@ -8,9 +8,6 @@ from functools import wraps
 import os
 
 
-
-
-
 api_bp = Blueprint('api', __name__)
 
 class AuthError(Exception):
