@@ -113,7 +113,7 @@ def health_check():
         'status': 'healthy',
         'message': 'Travel Chatbot API is running'
     })
-
+'''
 @app.route('/api/chat/text', methods=['POST'])
 def chat_text():
     """Text chat endpoint"""
@@ -130,7 +130,7 @@ def chat_text():
         return jsonify(result)
         
     except Exception as e:
-        return jsonify({'error': f'Internal server error: {str(e)}'}), 500
+        return jsonify({'error': f'Internal server error: {str(e)}'}), 500'''
 
 @app.route('/api/tts', methods=['POST'])
 def text_to_speech():
