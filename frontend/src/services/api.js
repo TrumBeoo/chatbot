@@ -128,7 +128,7 @@ class ChatbotAPI {
       throw new Error('Message must be a non-empty string');
     }
     
-    return this.post('/chat/text', { message: message.trim(), language });
+    return this.post('/chat', { message: message.trim(), language });
   }
 
   async sendVoiceMessage(audioBlob) {
