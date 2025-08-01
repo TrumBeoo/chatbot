@@ -1,14 +1,14 @@
 const config = {
   development: {
-    API_BASE_URL: 'http://localhost:5000',
+    API_BASE_URL: import.meta.env.VITE_API_BASE_URL,
     DEBUG: true,
   },
   production: {
-    API_BASE_URL: 'https://your-production-api.com',
+    API_BASE_URL: import.meta.env.VITE_API_BASE_URL,
     DEBUG: false,
   },
   staging: {
-    API_BASE_URL: 'https://your-staging-api.com',
+    API_BASE_URL: import.meta.env.VITE_API_BASE_URL,
     DEBUG: true,
   }
 };
