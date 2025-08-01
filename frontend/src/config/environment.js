@@ -1,15 +1,15 @@
 const config = {
   development: {
-    API_BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000',
-    DEBUG: import.meta.env.DEV,
+    API_BASE_URL: import.meta.env.VITE_API_BASE_URL ,
+    DEBUG: true,
   },
   production: {
-    API_BASE_URL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000',
-    DEBUG: import.meta.env.DEV,
+    API_BASE_URL: import.meta.env.VITE_API_BASE_URL ,
+    DEBUG: true,
   },
   staging: {
-    API_BASE_URL: import.meta.env.VITE_API_BASE_URL ||'http://localhost:5000',
-    DEBUG: import.meta.env.DEV,
+    API_BASE_URL: import.meta.env.VITE_API_BASE_URL,
+    DEBUG: true,
   }
 };
 
