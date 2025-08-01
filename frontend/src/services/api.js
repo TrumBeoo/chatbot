@@ -172,7 +172,7 @@ class ChatbotAPI {
   // Health and status methods
   async healthCheck() {
     try {
-      const response = await this.get('/api/health');
+      const response = await this.get('/health');
       return { ...response, isHealthy: response.status === 'healthy' };
     } catch (error) {
       return { 
