@@ -24,7 +24,7 @@ export const translations = {
     enterEmail: 'Nhập email',
     enterPassword: 'Nhập mật khẩu',
     loginWithGoogle: 'Google',
-    loginWithFacebook: 'Facebook',
+    loginWithFacebook: 'Đăng nhập bằng Facebook',
     name: 'Họ tên',
     enterName: 'Nhập họ tên',
     confirmpPassword: 'Xác nhận mật khẩu',
@@ -56,7 +56,7 @@ export const translations = {
     enterEmail: 'Enter email',
     enterPassword: 'Enter password',
     loginWithGoogle: 'Google',
-    loginWithFacebook: 'Facebook',
+    loginWithFacebook: 'Login with Facebook',
     name: 'Name',
     enterName: 'Enter name',
     confirmPassword: 'Confirm password',
@@ -66,7 +66,7 @@ export const translations = {
 };
 
 export const chatbotConfig = {
-  name: 'QBot AI',
+  name: 'QBot',
   logo: "🤖",
   theme: {
     primary: 'blue',
@@ -74,7 +74,7 @@ export const chatbotConfig = {
     accent: 'purple',
   },
   features: {
-    showStatus: true,
+    showStatus: false,
     showLocation: true,
     showSubtitle: true,
     showLogo: true,

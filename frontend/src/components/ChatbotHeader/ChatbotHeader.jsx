@@ -1,143 +1,135 @@
+// src/components/ChatHeader/ChatHeader.jsx
 import {
   Box,
-  Button,
-  VStack,
   HStack,
   Heading,
   Text,
+  Button,
+  IconButton,
+  Avatar,
+  Menu,
+  MenuButton,
+  MenuList,
+  MenuItem,
+  MenuDivider,
   Badge,
   Flex,
   useColorModeValue,
-  Image,
-
 } from '@chakra-ui/react';
-import { FaLanguage, FaMapMarkerAlt } from 'react-icons/fa';
+import {
+  FaBars,
+  FaLanguage,
+  FaUser,
+  FaSignOutAlt,
+  FaRobot,
+  FaChevronDown,
+} from 'react-icons/fa';
 import { translations } from '../../constants';
 
-
-const ChatbotHeader = ({ language, onLanguageChange, config }) => {
-  const bgGradient = useColorModeValue(
-    config.customStyles.headerBg,
-    'linear-gradient(135deg, #2D3748 0%, #4A5568 100%)'
-  );
+const ChatHeader = ({
+  language,
+  onLanguageChange,
+  onToggleSidebar,
+  user,
+  onLogout,
+  currentConversation,
+  config,
+}) => {
+  const bgColor = useColorModeValue('white', 'gray.800');
+  const borderColor = useColorModeValue('gray.200', 'gray.700');
 
   return (
     <Box
-      bgGradient={bgGradient}
-      color="white"
-      p={{ base: 3, md: 5 }}
-      borderRadius="xl"
-      mb={1}
-      boxShadow="xl"
-      position="relative"
-      overflow="hidden"
+      bg={bgColor}
+      borderBottomWidth="1px"
+      borderColor={borderColor}
+      px={4}
+      py={3}
+      boxShadow="sm"
     >
-      <Box
-        position="absolute"
-        top={0}
-        left={0}
-        right={0}
-        bottom={0}
-        opacity={0.1}
-        bgImage=""
-        bgSize="20px 20px"
-      />
-      <Flex
-        direction={{ base: 'column', md: 'row' }}
-        justify="space-between"
-        align={{ base: 'flex-start', md: 'center' }}
-        position="relative"
-        zIndex={1}
-        gap={{ base: 3, md: 5 }}
-      >
-        <Flex align="center" gap={{ base: 3, md: 20 }}> {/*vị trí text*/}
-          {config.features.showLogo && (
+      <Flex justify="space-between" align="center">
+        {/* Left Section */}
+        <HStack spacing={4}>
+          <IconButton
+            icon={<FaBars />}
+            variant="ghost"
+            size="sm"
+            onClick={onToggleSidebar}
+            aria-label="Toggle sidebar"
+          />
+          
+          <HStack spacing={3}>
             <Box
-              fontSize={config.customStyles.logoSize}
-              className={config.features.animated ? 'bounce-animation' : ''}
+              p={2}
+              bg="blue.100"
+              borderRadius="md"
+              color="blue.600"
             >
-              {typeof config.logo === 'string' && config.logo.startsWith('http') ? (
-                <Image
-                  src={config.logo}
-                  alt="Chatbot Logo"
-                  boxSize={config.customStyles.logoSize}
-                  borderRadius="full"
-                />
-              ) : (
-                <Text fontSize={config.customStyles.logoSize}>{config.logo}</Text>
-              )}
+              <FaRobot size="20px" />
             </Box>
-          )}
-          {/*status */}
-          <VStack align="flex-start" spacing={1}>
-            <HStack align="center" spacing={{ base: 2, md: 5 }}>
-              <Heading
-                color="white"
-                as="h1"
-                size={{ base: 'lg', md: 'xl' }}
-                fontWeight="bold"
-                letterSpacing="wide"
-              >
+            <Box>
+              <Heading size="md" color="gray.800">
                 {config.name}
               </Heading>
-              {config.features.showStatus && (
-                <Badge
-                  colorScheme="green"
-                  variant="solid"
-                  fontSize={{ base: '2xs', md: 'xs' }}
-                  px={{ base: 1.5, md: 2 }}
-                  py={1}
-                  borderRadius="full"
-                  animation={config.features.animated ? 'pulse 2s infinite' : 'none'}
-                >
-                  <HStack spacing={1} align="center">
-                    <Box w={2} h={2} bg="green.200" borderRadius="full" />
-                    <Text>{translations[language].status}</Text>
-                  </HStack>
-                </Badge>
+              {currentConversation && (
+                <Text fontSize="sm" color="gray.500" isTruncated maxW="200px">
+                  {currentConversation.title || translations[language].newConversation}
+                </Text>
               )}
+            </Box>
+          </HStack>
+
+          <Badge>
+            <HStack>
+              
             </HStack>
-            {config.features.showSubtitle && (
-              <Text
-                color="white"
-                fontSize={{ base: 'xs', md: 'sm' }}
-                opacity={0.9}
-                fontWeight="medium"
-              >
-                {translations[language].subtitle}
-              </Text>
-            )}
-            {config.features.showLocation && (
-              <HStack spacing={1} fontSize={{ base: '2xs', md: 'xs' }}>
-                <FaMapMarkerAlt />
-                <Text>{translations[language].location}</Text>
-              </HStack>
-            )}
-          </VStack>
-        </Flex>
-        <VStack spacing={2} align={{ base: 'flex-start', md: 'flex-end' }}>
+          </Badge>
+        </HStack>
+
+        {/* Right Section */}
+        <HStack spacing={3}>
           <Button
             leftIcon={<FaLanguage />}
             onClick={onLanguageChange}
-            colorScheme={config.theme.secondary}
-            variant="outline"
-            size={{ base: 'xs', md: 'sm' }}
-            color="white"
-            borderColor="whiteAlpha.400"
-            _hover={{
-              borderColor: 'whiteAlpha.600',
-              bg: 'whiteAlpha.200',
-            }}
+            variant="ghost"
+            size="sm"
           >
             {translations[language].languageSwitch}
           </Button>
-        </VStack>
+
+          {user ? (
+            <Menu>
+              <MenuButton as={Button} variant="ghost" size="sm">
+                <HStack spacing={2}>
+                  <Avatar size="sm" name={user.name} src={user.avatar} />
+                  <Text fontSize="sm">{user.name}</Text>
+                  <FaChevronDown size="12px" />
+                </HStack>
+              </MenuButton>
+              <MenuList>
+                <MenuItem icon={<FaUser />}>
+                  {translations[language].profile || "Hồ sơ"}
+                </MenuItem>
+                <MenuDivider />
+                <MenuItem icon={<FaSignOutAlt />} onClick={onLogout} color="red.500">
+                  {translations[language].logout || "Đăng xuất"}
+                </MenuItem>
+              </MenuList>
+            </Menu>
+          ) : (
+            <Button
+              leftIcon={<FaUser />}
+              colorScheme="blue"
+              variant="outline"
+              size="sm"
+            >
+              {translations[language].login || "Đăng nhập"}
+            </Button>
+          )}
+        </HStack>
       </Flex>
     </Box>
   );
 };
 
-
-
-
-export default ChatbotHeader;
+export default ChatHeader;

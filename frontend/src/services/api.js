@@ -349,7 +349,54 @@ async socialLogin(provider, credentials) {
     throw error;
   }
 }
+
+// Chat history methods
+  async getChatHistory(userId, page = 1, limit = 20, conversationId = null) {
+    if (!userId) {
+      throw new Error('User ID is required');
+    }
+    
+    const params = { page, limit };
+    if (conversationId) {
+      params.conversationId = conversationId;
+    }
+    
+    return this.get(`/chat/history/${userId}`, params);
+  }
+
+  async saveChatHistory(userId, data) {
+    if (!userId || !data) {
+      throw new Error('User ID and data are required');
+    }
+    
+    return this.post(`/chat/history/${userId}`, data);
+  }
+
+  async updateConversation(conversationId, data) {
+    if (!conversationId) {
+      throw new Error('Conversation ID is required');
+    }
+    
+    return this.put(`/conversations/${conversationId}`, data);
+  }
+
+  async deleteConversation(conversationId) {
+    if (!conversationId) {
+      throw new Error('Conversation ID is required');
+    }
+    
+    return this.delete(`/conversations/${conversationId}`);
+  }
+
+  async createConversation(userId, title = 'New Conversation') {
+    if (!userId) {
+      throw new Error('User ID is required');
+    }
+    
+    return this.post('/conversations', { userId, title });
+  }
 }
+
 
 
 // Create singleton instance

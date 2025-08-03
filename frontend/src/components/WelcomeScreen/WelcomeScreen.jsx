@@ -466,14 +466,17 @@ const handleFacebookLogin = useCallback(async () => {
             onSuccess={handleGoogleSuccess}
             onError={handleGoogleError}
             theme="outline"
-            size="large"
+            size="lg"
+           
             text="signin_with"
-            shape="rectangular"
-            logo_alignment="left"
-            width="100%"
+          
+            logo_alignment="center"
+          
             disabled={isLoading}
+            
           />
-        </Box>
+          
+        </Box >
       )}
 
       {/* Facebook Login Button */}  
@@ -482,16 +485,17 @@ const handleFacebookLogin = useCallback(async () => {
           leftIcon={<FaFacebook />}
           colorScheme="facebook"
           variant="outline"
-          size="lg"
+          size="md"
           width="100%"
           onClick={handleFacebookLogin}
           _hover={{ bg: 'blue.50', color: 'blue.500' }}
           borderColor="blue.500"
+          bg="white"
           color="blue.500"
           isDisabled={isLoading}
           isLoading={isLoading}
         >
-          {translations[language].loginWithFacebook || "Đăng nhập với Facebook"}
+          {translations[language].loginWithFacebook}
         </Button>
       )}
       
@@ -699,7 +703,7 @@ const handleFacebookLogin = useCallback(async () => {
             {/* Login/Register prompt for non-users */}
             {!user && (
               <Text fontSize="sm" opacity={0.7} textAlign="center">
-                {translations[language]?.loginPrompt || "Đăng nhập để lưu lịch sử chat"}
+                {translations[language]?.loginPrompt || "Đăng nhập để trải nghiệm nhiều thứ hơn!!"}
                 <Button
                   variant="link"
                   color="blue.300"
