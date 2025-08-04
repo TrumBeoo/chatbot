@@ -15,7 +15,8 @@ from db import mongo_db
 
 
 app = Flask(__name__)
-CORS(app, origins=["https://qbot-silk.vercel.app/"])
+CORS(app, origins=["http://localhost:3000"])
+
 app.mongo_db = mongo_db
 
 app.register_blueprint(api_bp, url_prefix='/api')

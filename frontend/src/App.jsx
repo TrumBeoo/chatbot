@@ -1,10 +1,16 @@
-import { useState, useRef, useEffect, useCallback } from 'react';
+// frontend/src/App.jsx
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import {
   Box,
   Container,
   Flex,
   useDisclosure,
   useToast,
+  useColorModeValue,
+  Spinner,
+  Center,
+  VStack,
+  Text,
 } from '@chakra-ui/react';
 
 // Components
@@ -21,10 +27,23 @@ import { useAuth } from './hooks/useAuth';
 import { useChatHistory } from './hooks/useChatHistory';
 import { translations, chatbotConfig } from './constants';
 
+// Loading component
+const LoadingScreen = ({ message = "Loading..." }) => (
+  <Center minH="100vh" bg={useColorModeValue('gray.50', 'gray.900')}>
+    <VStack spacing={4}>
+      <Spinner size="xl" color="blue.500" thickness="4px" />
+      <Text fontSize="lg" color="gray.600">{message}</Text>
+    </VStack>
+  </Center>
+);
+
 function App() {
   // States
   const [showWelcome, setShowWelcome] = useState(true);
-  const [language, setLanguage] = useState('vi');
+  const [language, setLanguage] = useState(() => {
+    // Get language from localStorage or default to 'vi'
+    return localStorage.getItem('language') || 'vi';
+  });
   const [inputText, setInputText] = useState('');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   
@@ -41,6 +60,7 @@ function App() {
   const {
     user,
     isLoading: isAuthLoading,
+    isInitialized: isAuthInitialized,
     login,
     register,
     logout,
@@ -61,36 +81,53 @@ function App() {
     loadConversations
   } = useChatHistory(user?.id);
 
-  // Combined loading state
-  const isLoading = isApiLoading || isAuthLoading || isChatLoading;
+  // Memoized loading state
+  const isLoading = useMemo(() => 
+    isApiLoading || isAuthLoading || isChatLoading,
+    [isApiLoading, isAuthLoading, isChatLoading]
+  );
+
+  // Save language preference
+  useEffect(() => {
+    localStorage.setItem('language', language);
+  }, [language]);
 
   // Effects
   useEffect(() => {
-    checkHealth();
-  }, [checkHealth]);
+    if (isAuthInitialized) {
+      checkHealth().catch(console.error);
+    }
+  }, [checkHealth, isAuthInitialized]);
 
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
   useEffect(() => {
-    if (user) {
-      loadConversations();
+    if (user && isAuthInitialized) {
+      loadConversations().catch(console.error);
     }
-  }, [user, loadConversations]);
+  }, [user, loadConversations, isAuthInitialized]);
 
-  // Utility functions
+  // Auto-scroll to bottom
   const scrollToBottom = useCallback(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ 
+        behavior: 'smooth',
+        block: 'end'
+      });
+    }
   }, []);
 
+  // Toast utility
   const showToast = useCallback((title, description, status) => {
     toast({
       title,
       description,
       status,
-      duration: 3000,
+      duration: status === 'error' ? 5000 : 3000,
       isClosable: true,
+      position: 'top',
     });
   }, [toast]);
 
@@ -98,12 +135,20 @@ function App() {
   const handleLanguageChange = useCallback(() => {
     const newLang = language === 'vi' ? 'en' : 'vi';
     setLanguage(newLang);
+    
+    /*showToast(
+      translations[newLang].languageChanged || "Language changed",
+      `${translations[newLang].languageSwitch} → ${language === 'vi' ? 'English' : 'Tiếng Việt'}`,
+      "info"
+    );*/
   }, [language]);
 
   const handleStartChat = useCallback(() => {
     setShowWelcome(false);
+    
+    // Create new conversation for authenticated users
     if (user && !currentConversation) {
-      createNewConversation();
+      createNewConversation().catch(console.error);
     }
   }, [user, currentConversation, createNewConversation]);
 
@@ -111,13 +156,13 @@ function App() {
     try {
       await login(credentials);
       showToast(
-        translations[language].loginSuccess || "Đăng nhập thành công!",
-        null,
+        translations[language].loginSuccess || "Login successful!",
+        translations[language].welcomeBack || "Welcome back!",
         "success"
       );
     } catch (error) {
       showToast(
-        translations[language].loginError || "Đăng nhập thất bại",
+        translations[language].loginError || "Login failed",
         error.message,
         "error"
       );
@@ -129,13 +174,13 @@ function App() {
     try {
       await register(formData);
       showToast(
-        translations[language].registerSuccess || "Đăng ký thành công!",
-        null,
+        translations[language].registerSuccess || "Registration successful!",
+        translations[language].welcomeMessage || "Welcome to our platform!",
         "success"
       );
     } catch (error) {
       showToast(
-        translations[language].registerError || "Đăng ký thất bại",
+        translations[language].registerError || "Registration failed",
         error.message,
         "error"
       );
@@ -146,14 +191,18 @@ function App() {
   const handleSocialLogin = useCallback(async (provider, credentials) => {
     try {
       await socialLogin(provider, credentials);
+      const successMessage = provider === 'google' 
+        ? (translations[language].googleLoginSuccess || "Signed in with Google successfully!")
+        : (translations[language].facebookLoginSuccess || "Signed in with Facebook successfully!");
+      
       showToast(
-        translations[language].loginSuccess || "Đăng nhập thành công!",
-        null,
+        translations[language].loginSuccess || "Login successful!",
+        successMessage,
         "success"
       );
     } catch (error) {
       showToast(
-        translations[language].socialLoginError || "Đăng nhập thất bại",
+        translations[language].socialLoginError || "Social login failed",
         error.message,
         "error"
       );
@@ -161,33 +210,46 @@ function App() {
     }
   }, [socialLogin, language, showToast]);
 
-  const handleLogout = useCallback(() => {
-    logout();
-    setShowWelcome(true);
-    showToast(
-      translations[language].logoutSuccess || "Đăng xuất thành công!",
-      null,
-      "info"
-    );
+  const handleLogout = useCallback(async () => {
+    try {
+      await logout();
+      setShowWelcome(true);
+      showToast(
+        translations[language].logoutSuccess || "Signed out successfully!",
+        translations[language].goodbye || "Come back soon!",
+        "info"
+      );
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Still show success message as user is logged out locally
+      showToast(
+        translations[language].logoutSuccess || "Signed out successfully!",
+        null,
+        "info"
+      );
+    }
   }, [logout, language, showToast]);
 
   const handleSend = useCallback(async (messageText = inputText) => {
-    if (!messageText.trim()) return;
+    if (!messageText?.trim()) return;
 
+    const trimmedMessage = messageText.trim();
+    
+    // Create user message
     const userMessage = {
-      id: Date.now().toString(),
-      text: messageText,
+      id: `user-${Date.now()}`,
+      text: trimmedMessage,
       sender: 'user',
       timestamp: new Date().toISOString()
     };
 
-    // Add user message
+    // Add user message immediately
     addMessage(userMessage);
 
-    // Add loading message
+    // Create loading message
     const loadingMessage = {
       id: `loading-${Date.now()}`,
-      text: '...',
+      text: translations[language].thinking || 'Thinking...',
       sender: 'bot',
       isLoading: true,
       timestamp: new Date().toISOString()
@@ -195,31 +257,44 @@ function App() {
     addMessage(loadingMessage);
 
     try {
-      const data = await sendMessage(messageText);
+      const response = await sendMessage(trimmedMessage);
       
-      // Remove loading message and add bot response
+      // Create bot response message
       const botMessage = {
         id: `bot-${Date.now()}`,
-        text: data.response,
+        text: response.response || response.message || 'No response received',
         sender: 'bot',
-        audioUrl: data.audio_url,
+        audioUrl: response.audio_url,
         timestamp: new Date().toISOString()
       };
 
+      // Replace loading message with bot response
       addMessage(botMessage, loadingMessage.id);
 
-      // Update conversation title if it's the first message
+      // Update conversation title for first message
       if (messages.length === 0 && currentConversation) {
-        const title = messageText.length > 30 
-          ? messageText.substring(0, 30) + '...' 
-          : messageText;
-        updateConversationTitle(currentConversation.id, title);
+        const title = trimmedMessage.length > 30 
+          ? trimmedMessage.substring(0, 30) + '...' 
+          : trimmedMessage;
+        updateConversationTitle(currentConversation.id, title).catch(console.error);
       }
     } catch (error) {
-      // Remove loading message on error
+      console.error('Send message error:', error);
+      
+      // Remove loading message and show error
       addMessage(null, loadingMessage.id);
+      
+      const errorMessage = {
+        id: `error-${Date.now()}`,
+        text: translations[language].messageError || "Sorry, I couldn't process your message. Please try again.",
+        sender: 'bot',
+        isError: true,
+        timestamp: new Date().toISOString()
+      };
+      addMessage(errorMessage);
+      
       showToast(
-        translations[language].messageError || "Gửi tin nhắn thất bại",
+        translations[language].messageError || "Message failed",
         error.message,
         "error"
       );
@@ -230,8 +305,10 @@ function App() {
 
   const handleSubmit = useCallback((e) => {
     e.preventDefault();
-    handleSend();
-  }, [handleSend]);
+    if (!isLoading && inputText.trim()) {
+      handleSend();
+    }
+  }, [handleSend, isLoading, inputText]);
 
   const handlePlayAudio = useCallback((audioUrl) => {
     if (isPlaying) {
@@ -242,20 +319,38 @@ function App() {
   }, [isPlaying, playAudio, pauseAudio]);
 
   const handleNewConversation = useCallback(() => {
-    createNewConversation();
+    createNewConversation().catch(console.error);
   }, [createNewConversation]);
 
   const handleSelectConversation = useCallback((conversationId) => {
-    selectConversation(conversationId);
+    selectConversation(conversationId).catch(console.error);
   }, [selectConversation]);
 
-  const handleDeleteConversation = useCallback((conversationId) => {
-    deleteConversation(conversationId);
-  }, [deleteConversation]);
+  const handleDeleteConversation = useCallback(async (conversationId) => {
+    try {
+      await deleteConversation(conversationId);
+      showToast(
+        translations[language].conversationDeleted || "Conversation deleted",
+        null,
+        "info"
+      );
+    } catch (error) {
+      showToast(
+        translations[language].deleteError || "Failed to delete conversation",
+        error.message,
+        "error"
+      );
+    }
+  }, [deleteConversation, language, showToast]);
 
   const toggleSidebar = useCallback(() => {
     setIsSidebarOpen(prev => !prev);
   }, []);
+
+  // Show loading screen while auth is initializing
+  if (!isAuthInitialized) {
+    return <LoadingScreen message={translations[language].initializing || "Initializing..."} />;
+  }
 
   // Render welcome screen
   if (showWelcome) {
@@ -276,7 +371,7 @@ function App() {
 
   // Main chat interface
   return (
-    <Flex h="100vh" bg="gray.50">
+    <Flex h="100vh" bg={useColorModeValue('gray.50', 'gray.900')}>
       {/* Sidebar */}
       <Sidebar
         isOpen={isSidebarOpen}

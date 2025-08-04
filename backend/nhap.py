@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app, origins=["https://qbot-silk.vercel.app/"]) # Cho phép cross-origin requests
+CORS(app) # Cho phép cross-origin requests
 
 # Cấu hình Groq API
 GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
@@ -80,5 +80,5 @@ def health_check():
     })
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5001, debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)
 

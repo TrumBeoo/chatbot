@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
+// frontend/src/components/WelcomeScreen/WelcomeScreen.jsx
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   Box,
   Container,
@@ -16,32 +17,59 @@ import {
   Input,
   FormControl,
   FormLabel,
+  FormErrorMessage,
   useDisclosure,
   useToast,
   Divider,
+  Alert,
+  AlertIcon,
+  AlertDescription,
+  ScaleFade,
+  useColorModeValue,
 } from '@chakra-ui/react';
-import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
-import { FaLanguage, FaPlay, FaUser, FaUserPlus, FaGoogle, FaFacebook } from 'react-icons/fa';
+import { GoogleOAuthProvider } from '@react-oauth/google';
+import { FaLanguage, FaPlay, FaUser, FaUserPlus } from 'react-icons/fa';
 import Lottie from 'lottie-react';
 import chatbotAnimation from '../../animations/chatbot.json';
 import { translations } from '../../constants';
 import { slideUp, pulse } from '../../styles/animations';
+import SocialLoginButtons from '../SocialLogin/SocialLoginButtons';
+import environment from '../../config/environment';
+import oauthService from '../../services/oauthService';
 
-// Environment configuration with fallbacks
-const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
-const FACEBOOK_APP_ID = import.meta.env.VITE_FACEBOOK_APP_ID || "";
+// Form validation
+const validateForm = (formData, authMode, language) => {
+  const errors = {};
 
-// Constants
-const INITIAL_FORM_STATE = {
-  email: '',
-  password: '',
-  confirmPassword: '',
-  name: ''
-};
+  // Email validation
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!formData.email) {
+    errors.email = translations[language].emailRequired || 'Email is required';
+  } else if (!emailRegex.test(formData.email)) {
+    errors.email = translations[language].invalidEmail || 'Invalid email format';
+  }
 
-const AUTH_MODES = {
-  LOGIN: 'login',
-  REGISTER: 'register'
+  // Password validation
+  if (!formData.password) {
+    errors.password = translations[language].passwordRequired || 'Password is required';
+  } else if (formData.password.length < 6) {
+    errors.password = translations[language].passwordTooShort || 'Password must be at least 6 characters';
+  }
+
+  // Register mode validations
+  if (authMode === 'register') {
+    if (!formData.name?.trim()) {
+      errors.name = translations[language].nameRequired || 'Name is required';
+    }
+
+    if (!formData.confirmPassword) {
+      errors.confirmPassword = translations[language].confirmPasswordRequired || 'Please confirm your password';
+    } else if (formData.password !== formData.confirmPassword) {
+      errors.confirmPassword = translations[language].passwordMismatch || 'Passwords do not match';
+    }
+  }
+
+  return errors;
 };
 
 const WelcomeScreen = ({ 
@@ -55,15 +83,32 @@ const WelcomeScreen = ({
   onLogout,
   onSocialLogin
 }) => {
-  // State
+  // State management
   const [showGreeting, setShowGreeting] = useState(false);
-  const [authMode, setAuthMode] = useState(AUTH_MODES.LOGIN);
-  const [formData, setFormData] = useState(INITIAL_FORM_STATE);
+  const [authMode, setAuthMode] = useState('login');
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+    confirmPassword: '',
+    name: ''
+  });
+  const [formErrors, setFormErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
-  
+  const [socialLoginError, setSocialLoginError] = useState(null);
+
   // Hooks
   const { isOpen, onOpen, onClose } = useDisclosure();
   const toast = useToast();
+
+  // Color mode values
+  const modalBg = useColorModeValue('white', 'gray.800');
+  const modalColor = useColorModeValue('gray.800', 'white');
+
+  // Memoized values
+  const hasConfiguredSocialLogin = useMemo(() => 
+    environment.GOOGLE_CLIENT_ID || environment.FACEBOOK_APP_ID,
+    []
+  );
 
   // Effects
   useEffect(() => {
@@ -77,20 +122,23 @@ const WelcomeScreen = ({
     return () => clearTimeout(timer);
   }, [playWelcomeSound]);
 
-  // Cleanup Facebook SDK on unmount
+  // Cleanup on unmount
   useEffect(() => {
     return () => {
-      // Clean up Facebook SDK script if component unmounts
-      const fbScript = document.getElementById('facebook-jssdk');
-      if (fbScript) {
-        fbScript.remove();
-      }
+      oauthService.cleanup();
     };
   }, []);
 
   // Utility functions
   const resetForm = useCallback(() => {
-    setFormData(INITIAL_FORM_STATE);
+    setFormData({
+      email: '',
+      password: '',
+      confirmPassword: '',
+      name: ''
+    });
+    setFormErrors({});
+    setSocialLoginError(null);
   }, []);
 
   const showToast = useCallback((title, description, status) => {
@@ -98,56 +146,11 @@ const WelcomeScreen = ({
       title,
       description,
       status,
-      duration: 3000,
+      duration: status === 'error' ? 5000 : 3000,
       isClosable: true,
+      position: 'top',
     });
   }, [toast]);
-
-  const validateForm = useCallback(() => {
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(formData.email)) {
-      showToast(
-        translations[language].invalidEmail || "Email không hợp lệ",
-        null,
-        "error"
-      );
-      return false;
-    }
-
-    // Password validation
-    if (formData.password.length < 6) {
-      showToast(
-        translations[language].passwordTooShort || "Mật khẩu phải có ít nhất 6 ký tự",
-        null,
-        "error"
-      );
-      return false;
-    }
-
-    // Confirm password validation for register mode
-    if (authMode === AUTH_MODES.REGISTER) {
-      if (!formData.name.trim()) {
-        showToast(
-          translations[language].nameRequired || "Vui lòng nhập họ tên",
-          null,
-          "error"
-        );
-        return false;
-      }
-
-      if (formData.password !== formData.confirmPassword) {
-        showToast(
-          translations[language].passwordMismatch || "Mật khẩu không khớp",
-          null,
-          "error"
-        );
-        return false;
-      }
-    }
-
-    return true;
-  }, [authMode, formData, language, showToast]);
 
   // Event handlers
   const handleStart = useCallback(() => {
@@ -165,35 +168,47 @@ const WelcomeScreen = ({
       ...prev,
       [name]: value
     }));
-  }, []);
+
+    // Clear specific field error when user starts typing
+    if (formErrors[name]) {
+      setFormErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
+    }
+  }, [formErrors]);
 
   const switchAuthMode = useCallback(() => {
-    setAuthMode(prevMode => 
-      prevMode === AUTH_MODES.LOGIN ? AUTH_MODES.REGISTER : AUTH_MODES.LOGIN
-    );
+    setAuthMode(prevMode => prevMode === 'login' ? 'register' : 'login');
     resetForm();
   }, [resetForm]);
 
   const handleAuthSubmit = useCallback(async (e) => {
     e.preventDefault();
     
-    if (!validateForm()) return;
+    const errors = validateForm(formData, authMode, language);
+    setFormErrors(errors);
+
+    if (Object.keys(errors).length > 0) {
+      return;
+    }
 
     setIsLoading(true);
+    setSocialLoginError(null);
 
     try {
-      if (authMode === AUTH_MODES.REGISTER) {
+      if (authMode === 'register') {
         await onRegister(formData);
         showToast(
-          translations[language].registerSuccess || "Đăng ký thành công!",
-          null,
+          translations[language].registerSuccess || "Registration successful!",
+          translations[language].welcomeMessage || "Welcome to our platform!",
           "success"
         );
       } else {
         await onLogin(formData);
         showToast(
-          translations[language].loginSuccess || "Đăng nhập thành công!",
-          null,
+          translations[language].loginSuccess || "Login successful!",
+          translations[language].welcomeBack || "Welcome back!",
           "success"
         );
       }
@@ -201,315 +216,190 @@ const WelcomeScreen = ({
       onClose();
       resetForm();
     } catch (error) {
-      const errorTitle = authMode === AUTH_MODES.REGISTER 
-        ? (translations[language].registerError || "Đăng ký thất bại")
-        : (translations[language].loginError || "Đăng nhập thất bại");
+      const errorTitle = authMode === 'register' 
+        ? (translations[language].registerError || "Registration failed")
+        : (translations[language].loginError || "Login failed");
       
       showToast(errorTitle, error.message, "error");
     } finally {
       setIsLoading(false);
     }
-  }, [authMode, formData, validateForm, onRegister, onLogin, language, showToast, onClose, resetForm]);
+  }, [authMode, formData, language, onRegister, onLogin, showToast, onClose, resetForm]);
 
-  // Render form fields
-  const renderFormFields = useCallback(() => (
-    <VStack spacing={4}>
-      {authMode === AUTH_MODES.REGISTER && (
-        <FormControl isRequired>
-          <FormLabel>{translations[language].name || "Họ tên"}</FormLabel>
-          <Input
-            name="name"
-            type="text"
-            value={formData.name}
-            onChange={handleInputChange}
-            placeholder={translations[language].enterName || "Nhập họ tên"}
-            bg="gray.700"
-            border="1px solid"
-            borderColor="gray.600"
-            _focus={{ borderColor: 'blue.400' }}
-            disabled={isLoading}
-          />
-        </FormControl>
-      )}
-
-      <FormControl isRequired>
-        <FormLabel>{translations[language].email || "Email"}</FormLabel>
-        <Input
-          name="email"
-          type="email"
-          value={formData.email}
-          onChange={handleInputChange}
-          placeholder={translations[language].enterEmail || "Nhập email"}
-          bg="gray.700"
-          border="1px solid"
-          borderColor="gray.600"
-          _focus={{ borderColor: 'blue.400' }}
-          disabled={isLoading}
-        />
-      </FormControl>
-
-      <FormControl isRequired>
-        <FormLabel>{translations[language].password || "Mật khẩu"}</FormLabel>
-        <Input
-          name="password"
-          type="password"
-          value={formData.password}
-          onChange={handleInputChange}
-          placeholder={translations[language].enterPassword || "Nhập mật khẩu"}
-          bg="gray.700"
-          border="1px solid"
-          borderColor="gray.600"
-          _focus={{ borderColor: 'blue.400' }}
-          disabled={isLoading}
-        />
-      </FormControl>
-
-      {authMode === AUTH_MODES.REGISTER && (
-        <FormControl isRequired>
-          <FormLabel>{translations[language].confirmPassword || "Xác nhận mật khẩu"}</FormLabel>
-          <Input
-            name="confirmPassword"
-            type="password"
-            value={formData.confirmPassword}
-            onChange={handleInputChange}
-            placeholder={translations[language].enterConfirmPassword || "Nhập lại mật khẩu"}
-            bg="gray.700"
-            border="1px solid"
-            borderColor="gray.600"
-            _focus={{ borderColor: 'blue.400' }}
-            disabled={isLoading}
-          />
-        </FormControl>
-      )}
-    </VStack>
-  ), [authMode, formData, handleInputChange, language, isLoading]);
-
-  // Google login handlers
+  // Social login handlers
   const handleGoogleSuccess = useCallback(async (credentialResponse) => {
+    setIsLoading(true);
+    setSocialLoginError(null);
+
     try {
-      console.log('Google login success:', credentialResponse);
-      
-      if (!onSocialLogin) {
-        throw new Error('Social login handler not available');
-      }
-      
-      setIsLoading(true);
-      
       await onSocialLogin('google', {
         credential: credentialResponse.credential
       });
       
       showToast(
-        translations[language].loginSuccess || "Đăng nhập thành công!",
-        null,
+        translations[language].loginSuccess || "Login successful!",
+        translations[language].googleLoginSuccess || "Signed in with Google successfully!",
         "success"
       );
       
       onClose();
+      resetForm();
     } catch (error) {
       console.error('Google login error:', error);
+      setSocialLoginError(error.message);
       showToast(
-        translations[language].socialLoginError || "Đăng nhập thất bại",
+        translations[language].socialLoginError || "Social login failed",
         error.message,
         "error"
       );
     } finally {
       setIsLoading(false);
     }
-  }, [onSocialLogin, language, showToast, onClose]);
+  }, [onSocialLogin, language, showToast, onClose, resetForm]);
 
-  const handleGoogleError = useCallback((error) => {
-    console.error('Google login error:', error);
-    showToast(
-      translations[language].socialLoginError || "Đăng nhập Google thất bại",
-      "Vui lòng thử lại",
-      "error"
-    );
-  }, [language, showToast]);
+  const handleFacebookSuccess = useCallback(async (facebookData) => {
+    setIsLoading(true);
+    setSocialLoginError(null);
 
- const initializeFacebookSDK = useCallback(() => {
-  return new Promise((resolve, reject) => {
-    // Nếu SDK đã được load và init
-    if (window.FB && typeof window.FB.init === 'function') {
-      console.log("[Facebook SDK] Đã được load sẵn");
-      return resolve();
-    }
-
-    if (!FACEBOOK_APP_ID) {
-      return reject(new Error('Facebook App ID chưa được cấu hình'));
-    }
-
-    // Tránh load trùng script
-    if (document.getElementById('facebook-jssdk')) {
-      console.warn("[Facebook SDK] Script đã tồn tại. Đợi SDK sẵn sàng...");
-      return waitForFbInit(resolve, reject);
-    }
-
-    // Tạo script mới
-    const script = document.createElement('script');
-    script.id = 'facebook-jssdk';
-    script.src = 'https://connect.facebook.net/en_US/sdk.js';
-    script.async = true;
-    script.defer = true;
-
-    script.onload = () => {
-      if (!window.FB) {
-        return reject(new Error('Tải Facebook SDK thất bại'));
-      }
-
-      try {
-        window.FB.init({
-          appId: FACEBOOK_APP_ID,
-          cookie: true,
-          xfbml: false, 
-          version: 'v19.0'
-        });
-
-        console.log('[Facebook SDK] Khởi tạo thành công');
-        resolve();
-      } catch (error) {
-        console.error('[Facebook SDK] Lỗi khởi tạo:', error);
-        reject(new Error('Khởi tạo Facebook SDK thất bại'));
-      }
-    };
-
-    script.onerror = () => {
-      reject(new Error('Không thể tải script Facebook SDK'));
-    };
-
-    document.body.appendChild(script);
-  });
-}, []);
-
- const getFacebookUserInfo = () => {
-  return new Promise((resolve, reject) => {
-    window.FB.api('/me', { fields: 'name,email,picture.type(large)' }, (userInfo) => {
-      if (!userInfo || userInfo.error) {
-        reject(new Error(userInfo?.error?.message || 'Không thể lấy thông tin người dùng'));
-      } else {
-        resolve(userInfo);
-      }
-    });
-  });
-};
-
-const handleFacebookLogin = useCallback(async () => {
-  if (!onSocialLogin) {
-    showToast(
-      translations[language].socialLoginError || "Chức năng đăng nhập chưa sẵn sàng",
-      null,
-      "error"
-    );
-    return;
-  }
-
-  setIsLoading(true);
-  try {
-    showToast(
-      translations[language].loading || "Đang xử lý...",
-      null,
-      "info"
-    );
-
-    await initializeFacebookSDK();
-
-    const loginResponse = await new Promise((resolve, reject) => {
-      window.FB.login((response) => {
-        if (response.authResponse) {
-          resolve(response.authResponse);
-        } else {
-          reject(new Error("Người dùng đã huỷ đăng nhập hoặc xảy ra lỗi"));
-        }
-      }, {
-        scope: 'email,public_profile',
-        return_scopes: true
+    try {
+      await onSocialLogin('facebook', {
+        accessToken: facebookData.accessToken,
+        userID: facebookData.userID,
+        userInfo: facebookData.userInfo
       });
-    });
 
-    const { accessToken, userID } = loginResponse;
+      showToast(
+        translations[language].loginSuccess || "Login successful!",
+        translations[language].facebookLoginSuccess || "Signed in with Facebook successfully!",
+        "success"
+      );
 
-    if (!accessToken || !userID) {
-      throw new Error("Facebook authentication không hợp lệ");
+      onClose();
+      resetForm();
+    } catch (error) {
+      console.error('Facebook login error:', error);
+      setSocialLoginError(error.message);
+      showToast(
+        translations[language].socialLoginError || "Social login failed",
+        error.message,
+        "error"
+      );
+    } finally {
+      setIsLoading(false);
     }
+  }, [onSocialLogin, language, showToast, onClose, resetForm]);
 
-    const userInfo = await getFacebookUserInfo();
+  const handleSocialLoginError = useCallback((error) => {
+    setSocialLoginError(error);
+  }, []);
 
-    await onSocialLogin('facebook', { accessToken, userID, userInfo });
+  const handleModalClose = useCallback(() => {
+    if (!isLoading) {
+      onClose();
+      resetForm();
+    }
+  }, [isLoading, onClose, resetForm]);
 
-    showToast(
-      translations[language].loginSuccess || "Đăng nhập thành công!",
-      null,
-      "success"
-    );
-
-    onClose();
-  } catch (error) {
-    console.error("Facebook login error:", error);
-    showToast(
-      translations[language].socialLoginError || "Đăng nhập Facebook thất bại",
-      error.message,
-      "error"
-    );
-  } finally {
-    setIsLoading(false);
-  }
-}, [onSocialLogin, language, showToast, onClose, initializeFacebookSDK]);
-
-
-  // Render social login buttons
-  const renderSocialButtons = useCallback(() => (
-    <VStack spacing={3} width="100%">
-      {/* Google Login Button */}
-      {GOOGLE_CLIENT_ID && (
-        <Box width="100%">
-          <GoogleLogin
-            onSuccess={handleGoogleSuccess}
-            onError={handleGoogleError}
-            theme="outline"
-            size="lg"
-           
-            text="signin_with"
-          
-            logo_alignment="center"
-          
+  // Render form fields
+  const renderFormFields = useCallback(() => (
+    <VStack spacing={4}>
+      {/* Name field for registration */}
+      {authMode === 'register' && (
+        <FormControl isRequired isInvalid={!!formErrors.name}>
+          <FormLabel>{translations[language].name || "Full Name"}</FormLabel>
+          <Input
+            name="name"
+            type="text"
+            value={formData.name}
+            onChange={handleInputChange}
+            placeholder={translations[language].enterName || "Enter your full name"}
+            bg={useColorModeValue('gray.50', 'gray.700')}
+            border="1px solid"
+            borderColor={useColorModeValue('gray.300', 'gray.600')}
+            _focus={{ 
+              borderColor: 'blue.400',
+              boxShadow: '0 0 0 1px #3182CE'
+            }}
             disabled={isLoading}
-            
+            size="md"
           />
-          
-        </Box >
+          <FormErrorMessage>{formErrors.name}</FormErrorMessage>
+        </FormControl>
       )}
 
-      {/* Facebook Login Button */}  
-      {FACEBOOK_APP_ID && (
-        <Button
-          leftIcon={<FaFacebook />}
-          colorScheme="facebook"
-          variant="outline"
+      {/* Email field */}
+      <FormControl isRequired isInvalid={!!formErrors.email}>
+        <FormLabel>{translations[language].email || "Email"}</FormLabel>
+        <Input
+          name="email"
+          type="email"
+          value={formData.email}
+          onChange={handleInputChange}
+          placeholder={translations[language].enterEmail || "Enter your email"}
+          bg={useColorModeValue('gray.50', 'gray.700')}
+          border="1px solid"
+          borderColor={useColorModeValue('gray.300', 'gray.600')}
+          _focus={{ 
+            borderColor: 'blue.400',
+            boxShadow: '0 0 0 1px #3182CE'
+          }}
+          disabled={isLoading}
           size="md"
-          width="100%"
-          onClick={handleFacebookLogin}
-          _hover={{ bg: 'blue.50', color: 'blue.500' }}
-          borderColor="blue.500"
-          bg="white"
-          color="blue.500"
-          isDisabled={isLoading}
-          isLoading={isLoading}
-        >
-          {translations[language].loginWithFacebook}
-        </Button>
-      )}
-      
-      {/* Show warning if social login not configured */}
-      {(!GOOGLE_CLIENT_ID && !FACEBOOK_APP_ID) && (
-        <Text fontSize="sm" color="orange.300" textAlign="center">
-          {translations[language].socialLoginNotConfigured || 
-           "Đăng nhập xã hội chưa được cấu hình"}
-        </Text>
+          w="sm"
+        />
+        <FormErrorMessage>{formErrors.email}</FormErrorMessage>
+      </FormControl>
+
+      {/* Password field */}
+      <FormControl isRequired isInvalid={!!formErrors.password}>
+        <FormLabel>{translations[language].password || "Password"}</FormLabel>
+        <Input
+          name="password"
+          type="password"
+          value={formData.password}
+          onChange={handleInputChange}
+          placeholder={translations[language].enterPassword || "Enter your password"}
+          bg={useColorModeValue('gray.50', 'gray.700')}
+          border="1px solid"
+          borderColor={useColorModeValue('gray.300', 'gray.600')}
+          _focus={{ 
+            borderColor: 'blue.400',
+            boxShadow: '0 0 0 1px #3182CE'
+          }}
+          disabled={isLoading}
+          size="md"
+        />
+        <FormErrorMessage>{formErrors.password}</FormErrorMessage>
+      </FormControl>
+
+      {/* Confirm password field for registration */}
+      {authMode === 'register' && (
+        <FormControl isRequired isInvalid={!!formErrors.confirmPassword}>
+          <FormLabel>{translations[language].confirmPassword || "Confirm Password"}</FormLabel>
+          <Input
+            name="confirmPassword"
+            type="password"
+            value={formData.confirmPassword}
+            onChange={handleInputChange}
+            placeholder={translations[language].enterConfirmPassword || "Re-enter your password"}
+            bg={useColorModeValue('gray.50', 'gray.700')}
+            border="1px solid"
+            borderColor={useColorModeValue('gray.300', 'gray.600')}
+            _focus={{ 
+              borderColor: 'blue.400',
+              boxShadow: '0 0 0 1px #3182CE'
+            }}
+            disabled={isLoading}
+            size="md"
+           
+          />
+          <FormErrorMessage>{formErrors.confirmPassword}</FormErrorMessage>
+        </FormControl>
       )}
     </VStack>
-  ), [handleGoogleSuccess, handleGoogleError, handleFacebookLogin, language, isLoading]);
+  ), [authMode, formData, handleInputChange, language, isLoading, formErrors]);
 
-  // Only render GoogleOAuthProvider if we have a valid client ID
+  // Main content
   const content = (
     <Box
       minH="100vh"
@@ -539,7 +429,10 @@ const handleFacebookLogin = useCallback(async () => {
               _hover={{
                 borderColor: 'whiteAlpha.600',
                 bg: 'whiteAlpha.200',
+                transform: 'translateY(-1px)'
               }}
+              _active={{ transform: 'translateY(0)' }}
+              transition="all 0.2s"
             >
               {translations[language]?.languageSwitch || "Switch Language"}
             </Button>
@@ -557,14 +450,17 @@ const handleFacebookLogin = useCallback(async () => {
                 _hover={{
                   borderColor: 'whiteAlpha.600',
                   bg: 'whiteAlpha.200',
+                  transform: 'translateY(-1px)'
                 }}
+                _active={{ transform: 'translateY(0)' }}
+                transition="all 0.2s"
               >
-                {translations[language]?.login || "Đăng nhập"}
+                {translations[language]?.login || "Sign In"}
               </Button>
             ) : (
               <HStack spacing={2}>
-                <Text fontSize="sm" opacity={0.8}>
-                  {translations[language]?.welcome || "Xin chào"}, {user.name}!
+                <Text fontSize="sm" opacity={0.9} fontWeight="medium">
+                  {translations[language]?.welcome || "Welcome"}, {user.name}!
                 </Text>
                 <Button
                   onClick={onLogout}
@@ -577,20 +473,24 @@ const handleFacebookLogin = useCallback(async () => {
                   _hover={{
                     borderColor: 'whiteAlpha.600',
                     bg: 'whiteAlpha.200',
+                    transform: 'translateY(-1px)'
                   }}
+                  _active={{ transform: 'translateY(0)' }}
+                  transition="all 0.2s"
                 >
-                  {translations[language]?.logout || "Đăng xuất"}
+                  {translations[language]?.logout || "Sign Out"}
                 </Button>
               </HStack>
             )}
           </HStack>
 
           {/* Bot Avatar */}
-          <Box mt={-20}>
+          <Box mt={-20} position="relative">
             <Lottie 
               animationData={chatbotAnimation}
               loop={true}
-              autoplay={true}             
+              autoplay={true}
+              style={{ width: 300, height: 300 }}
             />
             <Box
               position="absolute"
@@ -607,25 +507,25 @@ const handleFacebookLogin = useCallback(async () => {
           </Box>
 
           {/* Greeting */}
-          {showGreeting && (
+          <ScaleFade in={showGreeting} initialScale={0.9}>
             <Box
               bg="whiteAlpha.200"
               backdropFilter="blur(10px)"
-              borderRadius="200px"
+              borderRadius="2xl"
               mt={-20}
-              p={5}
-              px={10}
+              p={6}
+              px={8}
               border="1px solid"
               borderColor="whiteAlpha.300"
-              animation={`${slideUp} 0.6s ease-out`}
               position="relative"
+              maxW="md"
             >
               <Text
                 fontSize={{ base: 'xl', md: '2xl' }}
                 fontWeight="bold"
                 mb={2}
               >
-                {translations[language]?.welcomeGreeting || "Xin chào!"}
+                {translations[language]?.welcomeGreeting || "Hello! I'm QBot AI, your travel assistant!"}
               </Text>
               
               <Box
@@ -638,162 +538,224 @@ const handleFacebookLogin = useCallback(async () => {
                 borderLeft="15px solid transparent"
                 borderRight="15px solid transparent"
                 borderTop="15px solid"
-                borderTopColor="whiteAlpha.200"
-              />
-            </Box>
-          )}
+               borderTopColor="whiteAlpha.200"
+             />
+           </Box>
+         </ScaleFade>
 
-          {/* Description */}
-          <Box
-            maxW="500px"
-            mt={-5}
-            animation={`${slideUp} 1.2s ease-out`}
-            animationDelay="0.8s"
-            animationFillMode="both"
-          >
-            <Text
-              fontSize={{ base: 'lg', md: '2xl' }}
-              opacity={0.85}
-              lineHeight="1.6"
-              textAlign="center"
-              color="white.900"
-              fontWeight="bold"
-            >
-              {translations[language]?.welcomeDescription || "Chào mừng bạn đến với trợ lý du lịch!"}
-            </Text>
-          </Box>
+         {/* Description */}
+         <Box
+           maxW="600px"
+           mt={-2}
+           animation={`${slideUp} 1.2s ease-out`}
+           animationDelay="0.8s"
+           animationFillMode="both"
+         >
+           <Text
+             fontSize={{ base: 'lg', md: '2xl' }}
+             opacity={0.9}
+             lineHeight="1.6"
+             textAlign="center"
+             fontWeight="500"
+           >
+             {translations[language]?.welcomeDescription || 
+              "I'll help you discover amazing destinations, find great restaurants, and plan your perfect trip in Quảng Ninh!"}
+           </Text>
+         </Box>
 
-          {/* Action Buttons */}
-          <VStack
-            spacing={4}
-            animation={`${slideUp} 1.6s ease-out`}
-            animationDelay="1.2s"
-            animationFillMode="both"
-          >
-            {/* Try Button */}
-            <Button
-              size="lg"
-              colorScheme="whiteAlpha.500"
-              bg="blue.500"
-              color="white"
-              border="2px solid"
-              borderColor="whiteAlpha.400"
-              borderRadius="full"
-              px={8}
-              py={6}
-              fontSize={{ base: 'md', md: 'lg' }}
-              fontWeight="bold"
-              leftIcon={<FaPlay />}
-              onClick={handleStart}
-              _hover={{
-                bg: 'blue.600',
-                borderColor: 'whiteAlpha.600',
-                transform: 'translateY(-2px)',
-                boxShadow: '0 8px 25px rgba(0,0,0,0.15)',
-              }}
-              _active={{
-                transform: 'translateY(0)',
-              }}
-              transition="all 0.3s ease"
-              boxShadow="0 4px 15px rgba(0,0,0,0.1)"
-            >
-              {translations[language]?.tryButton || "Dùng thử"}
-            </Button>
+         {/* Action Buttons */}
+         <VStack
+           spacing={4}
+           animation={`${slideUp} 1.6s ease-out`}
+           animationDelay="1.2s"
+           animationFillMode="both"
+         >
+           {/* Try Button */}
+           <Button
+             size="lg"
+             colorScheme="blue"
+             bg="blue.500"
+             color="white"
+             border="2px solid"
+             borderColor="blue.400"
+             borderRadius="full"
+             px={10}
+             py={6}
+             fontSize={{ base: 'md', md: 'lg' }}
+             fontWeight="bold"
+             leftIcon={<FaPlay />}
+             onClick={handleStart}
+             _hover={{
+               bg: 'blue.600',
+               borderColor: 'blue.300',
+               transform: 'translateY(-2px)',
+               boxShadow: '0 8px 25px rgba(66, 153, 225, 0.3)',
+             }}
+             _active={{
+               transform: 'translateY(0)',
+             }}
+             transition="all 0.3s ease"
+             boxShadow="0 4px 15px rgba(66, 153, 225, 0.2)"
+           >
+             {translations[language]?.tryButton || "Try Now"}
+           </Button>
 
-            {/* Login/Register prompt for non-users */}
-            {!user && (
-              <Text fontSize="sm" opacity={0.7} textAlign="center">
-                {translations[language]?.loginPrompt || "Đăng nhập để trải nghiệm nhiều thứ hơn!!"}
-                <Button
-                  variant="link"
-                  color="blue.300"
-                  fontSize="sm"
-                  ml={1}
-                  onClick={onOpen}
-                  _hover={{ color: 'blue.100' }}
-                >
-                  {translations[language]?.loginNow || "Đăng nhập ngay"}
-                </Button>
-              </Text>
-            )}
-          </VStack>
-        </VStack>
-      </Container>
+           {/* Login/Register prompt for non-users */}
+           {!user && (
+             <Text fontSize="sm" opacity={0.8} textAlign="center">
+               {translations[language]?.loginPrompt || "Sign in to save your chat history and get personalized recommendations!"}
+               <Button
+                 variant="link"
+                 color="blue.300"
+                 fontSize="sm"
+                 ml={2}
+                 onClick={onOpen}
+                 _hover={{ color: 'blue.100', textDecoration: 'underline' }}
+                 fontWeight="medium"
+               >
+                 {translations[language]?.loginNow || "Sign in now"}
+               </Button>
+             </Text>
+           )}
+         </VStack>
+       </VStack>
+     </Container>
 
-      {/* Auth Modal */}
-      <Modal isOpen={isOpen} onClose={onClose} size="md" closeOnOverlayClick={!isLoading}>
-        <ModalOverlay backdropFilter="blur(10px)" />
-        <ModalContent bg="gray.800" color="white">
-          <ModalHeader textAlign="center">
-            {authMode === AUTH_MODES.LOGIN 
-              ? (translations[language]?.login || "Đăng nhập")
-              : (translations[language]?.register || "Đăng ký")
-            }
-          </ModalHeader>
-          <ModalCloseButton isDisabled={isLoading} />
-          <ModalBody pb={6}>
-            <form onSubmit={handleAuthSubmit}>
-              <VStack spacing={4}>
-                {renderFormFields()}
+     {/* Enhanced Auth Modal */}
+     <Modal 
+       isOpen={isOpen} 
+       onClose={handleModalClose} 
+       size="md" 
+       closeOnOverlayClick={!isLoading}
+       motionPreset="slideInBottom"
+     >
+       <ModalOverlay backdropFilter="blur(10px)" bg="blackAlpha.600" />
+       <ModalContent bg={modalBg} color={modalColor} borderRadius="xl" mx={4}>
+         <ModalHeader textAlign="center" pb={2}>
+           <VStack spacing={2}>
+             <Text fontSize="2xl" fontWeight="bold">
+               {authMode === 'login' 
+                 ? (translations[language]?.login || "Welcome Back")
+                 : (translations[language]?.register || "Create Account")
+               }
+             </Text>
+             <Text fontSize="sm" color="gray.500" fontWeight="normal">
+               {authMode === 'login'
+                 ? (translations[language]?.loginSubtitle )
+                 : (translations[language]?.registerSubtitle )
+               }
+             </Text>
+           </VStack>
+         </ModalHeader>
+         <ModalCloseButton isDisabled={isLoading} />
+         
+         <ModalBody pb={6}>
+           {/* Social Login Error Alert */}
+           {socialLoginError && (
+             <Alert status="error" borderRadius="md" mb={4}>
+               <AlertIcon />
+               <AlertDescription>{socialLoginError}</AlertDescription>
+             </Alert>
+           )}
 
-                <Button
-                  type="submit"
-                  colorScheme="blue"
-                  size="lg"
-                  width="100%"
-                  mt={4}
-                  isLoading={isLoading}
-                  loadingText={authMode === AUTH_MODES.REGISTER ? "Đang đăng ký..." : "Đang đăng nhập..."}
-                >
-                  {authMode === AUTH_MODES.LOGIN 
-                    ? (translations[language]?.login || "Đăng nhập")
-                    : (translations[language]?.register || "Đăng ký")
-                  }
-                </Button>
+           <VStack spacing={6}>
+             {/* Social Login Buttons */}
+             {hasConfiguredSocialLogin && (
+               <Box width="100%" position="relative">
+                 <SocialLoginButtons
+                   onGoogleSuccess={handleGoogleSuccess}
+                   onFacebookSuccess={handleFacebookSuccess}
+                   onError={handleSocialLoginError}
+                   language={language}
+                   isLoading={isLoading}
+                   disabled={isLoading}
+                 />
+               </Box>
+             )}
 
-                <Divider />
+             {/* Divider */}
+             {hasConfiguredSocialLogin && (
+               <HStack width="100%">
+                 <Divider />
+                 <Text fontSize="sm" color="gray.500" px={3} whiteSpace="nowrap">
+                   {translations[language]?.orUseEmail || "or use email"}
+                 </Text>
+                 <Divider />
+               </HStack>
+             )}
 
-                {/* Social Login */}
-                {renderSocialButtons()}
+             {/* Email/Password Form */}
+             <Box as="form" onSubmit={handleAuthSubmit} width="100%">
+               <VStack spacing={4}>
+                 {renderFormFields()}
 
-                <Text fontSize="sm" textAlign="center" opacity={0.8}>
-                  {authMode === AUTH_MODES.LOGIN 
-                    ? (translations[language]?.noAccount || "Chưa có tài khoản?")
-                    : (translations[language]?.hasAccount || "Đã có tài khoản?")
-                  }
-                  <Button
-                    variant="link"
-                    color="blue.300"
-                    fontSize="sm"
-                    ml={1}
-                    onClick={switchAuthMode}
-                    _hover={{ color: 'blue.100' }}
-                    isDisabled={isLoading}
-                  >
-                    {authMode === AUTH_MODES.LOGIN 
-                      ? (translations[language]?.registerNow || "Đăng ký ngay")
-                      : (translations[language]?.loginNow || "Đăng nhập ngay")
-                    }
-                  </Button>
-                </Text>
-              </VStack>
-            </form>
-          </ModalBody>
-        </ModalContent>
-      </Modal>
-    </Box>
-  );
+                 <Button
+                   type="submit"
+                   colorScheme="blue"
+                   size="lg"
+                   width="100%"
+                   mt={4}
+                   isLoading={isLoading}
+                   loadingText={
+                     authMode === 'register' 
+                       ? (translations[language]?.creatingAccount || "Creating account...")
+                       : (translations[language]?.signingIn || "Signing in...")
+                   }
+                   _hover={{
+                     transform: 'translateY(-1px)',
+                     boxShadow: 'lg'
+                   }}
+                   _active={{ transform: 'translateY(0)' }}
+                   transition="all 0.2s"
+                 >
+                   {authMode === 'login' 
+                     ? (translations[language]?.signIn || "Sign In")
+                     : (translations[language]?.createAccount || "Create Account")
+                   }
+                 </Button>
 
-  // Wrap with GoogleOAuthProvider only if Google Client ID is available
-  if (GOOGLE_CLIENT_ID) {
-    return (
-      <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
-        {content}
-      </GoogleOAuthProvider>
-    );
-  }
+                 {/* Switch Auth Mode */}
+                 <HStack spacing={1} justify="center" pt={2}>
+                   <Text fontSize="sm" color="gray.500">
+                     {authMode === 'login' 
+                       ? (translations[language]?.noAccount || "Don't have an account?")
+                       : (translations[language]?.hasAccount || "Already have an account?")
+                     }
+                   </Text>
+                   <Button
+                     variant="link"
+                     color="blue.500"
+                     fontSize="sm"
+                     onClick={switchAuthMode}
+                     _hover={{ color: 'blue.600', textDecoration: 'underline' }}
+                     isDisabled={isLoading}
+                     fontWeight="medium"
+                   >
+                     {authMode === 'login' 
+                       ? (translations[language]?.signUpNow || "Sign up")
+                       : (translations[language]?.signInNow || "Sign in")
+                     }
+                   </Button>
+                 </HStack>
+               </VStack>
+             </Box>
+           </VStack>
+         </ModalBody>
+       </ModalContent>
+     </Modal>
+   </Box>
+ );
 
-  return content;
+ // Wrap with GoogleOAuthProvider only if Google Client ID is available
+ if (environment.GOOGLE_CLIENT_ID) {
+   return (
+     <GoogleOAuthProvider clientId={environment.GOOGLE_CLIENT_ID}>
+       {content}
+     </GoogleOAuthProvider>
+   );
+ }
+
+ return content;
 };
 
 export default WelcomeScreen;

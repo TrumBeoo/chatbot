@@ -46,16 +46,16 @@ const ChatInput = ({
   const canSend = inputText.trim() && !isLoading;
 
   return (
-    <Flex justify="center" px={4} py={4} bg={bgColor}>
-      <Box as="form" onSubmit={onSubmit} w="100%" maxW="750px">
+    <Flex justify="center" px={5} py={5} bg={bgColor}>
+      <Box as="form" onSubmit={onSubmit} w="100%" maxW="700px">
       <Flex
   align="center"
   bg="gray.300"
-  border="solid"
+  border="none"
   borderColor={borderColor}
   borderRadius={{base: "full", md: "3xl"}}
   px={3}
-  py={3}
+  py={{md: "30px", base: "10px"}}
   _focusWithin={{
     borderColor: focusBorderColor,
     boxShadow: `0 0 0 1px ${focusBorderColor}`,
@@ -82,11 +82,11 @@ const ChatInput = ({
     disabled={isLoading}
     resize="none"
     minH="36px"
-    mt="20px"
+    maxH="200px"
     border="none"
     bg="transparent"
     boxShadow="none"
-    fontSize={{md:"20px", base: "13px"}}
+    fontSize={{md:"15px", base: "13px"}}
     px="10px" 
     py=""
     
