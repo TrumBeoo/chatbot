@@ -6,6 +6,7 @@ import requests
 import jwt
 from functools import wraps
 import os
+from . import mongo_db
 
 
 api_bp = Blueprint('api', __name__)
@@ -41,6 +42,48 @@ def handle_db_errors(func):
         except Exception as e:
             return jsonify({"error": f"Database error: {str(e)}"}), 500
     return wrapper
+
+@api_bp.route('/users', methods=['POST'])
+def create_user():
+    """Create new user"""
+    try:
+        data = request.get_json()
+        result = mongo_db.users.insert_one(data)
+        return jsonify({'user_id': str(result.inserted_id)})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@api_bp.route('/conversations', methods=['POST'])
+def create_conversation():
+    """Create new conversation"""
+    try:
+        data = request.get_json()
+        result = mongo_db.conversations.insert_one(data)
+        return jsonify({'conversation_id': str(result.inserted_id)})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@api_bp.route('/conversations/<conversation_id>', methods=['PUT'])
+def update_conversation(conversation_id):
+    """Update conversation"""
+    try:
+        data = request.get_json()
+        mongo_db.conversations.update_one(
+            {'_id': conversation_id},
+            {'$set': data}
+        )
+        return jsonify({'message': 'Conversation updated'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@api_bp.route('/conversations/<conversation_id>', methods=['DELETE'])
+def delete_conversation(conversation_id):
+    """Delete conversation"""
+    try:
+        mongo_db.conversations.delete_one({'_id': conversation_id})
+        return jsonify({'message': 'Conversation deleted'})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @api_bp.route('/register', methods=['POST'])
 @handle_db_errors
