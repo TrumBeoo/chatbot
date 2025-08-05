@@ -376,16 +376,18 @@ function App() {
 
       {/* Main Chat Area */}
       <Flex flex="1" direction="column" overflow="hidden">
-        <ChatHeader
+       <ChatHeader
           language={language}
           onLanguageChange={handleLanguageChange}
           onToggleSidebar={toggleSidebar}
           user={user}
           onLogout={handleLogout}
+          onLogin={handleLogin}          // Thêm prop này
+          onRegister={handleRegister}    // Thêm prop này  
+          onSocialLogin={handleSocialLogin} // Thêm prop này
           currentConversation={currentConversation}
           config={chatbotConfig}
         />
-
         <Box flex="1" overflow="hidden">
           <ChatArea
             messages={messages}

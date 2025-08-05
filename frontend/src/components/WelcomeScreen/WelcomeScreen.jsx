@@ -36,6 +36,7 @@ import { slideUp, pulse } from '../../styles/animations';
 import SocialLoginButtons from '../SocialLogin/SocialLoginButtons';
 import environment from '../../config/environment';
 import oauthService from '../../services/oauthService';
+import AuthModal from '../Auth/AuthModal';
 
 // Form validation
 const validateForm = (formData, authMode, language) => {
