@@ -15,8 +15,6 @@ const ChatArea = ({
   messages,
   messagesEndRef,
   language,
-  onPlayAudio,
-  isPlaying,
   isLoading,
   config,
 }) => {
@@ -45,8 +43,6 @@ const ChatArea = ({
               key={message.id || idx}
               message={message}
               language={language}
-              onPlayAudio={onPlayAudio}
-              isPlaying={isPlaying}
               config={config}
             />
           ))}

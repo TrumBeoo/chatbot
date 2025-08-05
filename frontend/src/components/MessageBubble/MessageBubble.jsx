@@ -23,7 +23,7 @@ import {
 import { useState } from 'react';
 import { translations } from '../../constants';
 
-const MessageBubble = ({ message, language, onPlayAudio, isPlaying, config }) => {
+const MessageBubble = ({ message, language, config }) => {
   const [isCopied, setIsCopied] = useState(false);
   const isUser = message.sender === 'user';
   
@@ -130,15 +130,6 @@ const MessageBubble = ({ message, language, onPlayAudio, isPlaying, config }) =>
              title={isCopied ? 'Copied!' : 'Copy'}
            />
            
-           {message.audioUrl && config.features.voiceEnabled && (
-             <IconButton
-               icon={isPlaying ? <FaPause /> : <FaVolumeUp />}
-               size="xs"
-               variant="ghost"
-               onClick={() => onPlayAudio(message.audioUrl)}
-               aria-label={translations[language].playAudio || 'Play audio'}
-             />
-           )}
            
            <IconButton
              icon={<FaThumbsUp />}

@@ -21,7 +21,6 @@ import ChatInput from './components/ChatInput/ChatInput';
 import Sidebar from './components/Sidebar/Sidebar';
 
 // Hooks and Constants
-import { useAudioPlayer } from './hooks/useAudioPlayer';
 import { useChatbotAPI } from './hooks/useChatbotAPI';
 import { useAuth } from './hooks/useAuth';
 import { useChatHistory } from './hooks/useChatHistory';
@@ -53,7 +52,6 @@ function App() {
   // Hooks
   const { isOpen: isSidebarDisclosed, onOpen: openSidebar, onClose: closeSidebar } = useDisclosure();
   const toast = useToast();
-  const { isPlaying, playAudio, pauseAudio, playWelcomeSound } = useAudioPlayer();
   const { isLoading: isApiLoading, sendMessage, checkHealth } = useChatbotAPI(language);
   
   // Auth hook
@@ -310,14 +308,6 @@ function App() {
     }
   }, [handleSend, isLoading, inputText]);
 
-  const handlePlayAudio = useCallback((audioUrl) => {
-    if (isPlaying) {
-      pauseAudio();
-    } else {
-      playAudio(audioUrl);
-    }
-  }, [isPlaying, playAudio, pauseAudio]);
-
   const handleNewConversation = useCallback(() => {
     createNewConversation().catch(console.error);
   }, [createNewConversation]);
@@ -359,7 +349,6 @@ function App() {
         language={language}
         onStart={handleStartChat}
         onLanguageChange={handleLanguageChange}
-        playWelcomeSound={playWelcomeSound}
         onRegister={handleRegister}
         onLogin={handleLogin}
         onSocialLogin={handleSocialLogin}
@@ -402,8 +391,6 @@ function App() {
             messages={messages}
             messagesEndRef={messagesEndRef}
             language={language}
-            onPlayAudio={handlePlayAudio}
-            isPlaying={isPlaying}
             isLoading={isLoading}
             config={chatbotConfig}
           />
