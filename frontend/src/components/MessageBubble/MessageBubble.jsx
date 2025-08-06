@@ -28,13 +28,13 @@ const MessageBubble = ({ message, language, config }) => {
   const isUser = message.sender === 'user';
   
   const bgColor = useColorModeValue(
-    isUser ? 'blue.500' : 'white',
-    isUser ? 'blue.600' : 'gray.800'
+    isUser ? 'blue.500' : message.isError ? 'red.50' : 'white',
+    isUser ? 'blue.600' : message.isError ? 'red.900' : 'gray.800'
   );
   
   const textColor = useColorModeValue(
-    isUser ? 'white' : 'gray.800',
-    isUser ? 'white' : 'white'
+    isUser ? 'white' : message.isError ? 'red.600' : 'gray.800',
+    isUser ? 'white' : message.isError ? 'red.200' : 'white'
   );
   
   const borderColor = useColorModeValue('gray.200', 'gray.700');

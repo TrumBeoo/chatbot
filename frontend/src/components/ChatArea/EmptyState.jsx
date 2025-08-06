@@ -38,8 +38,7 @@ const EmptyState = ({ language, config }) => {
             {translations[language].welcomeToChat || "Chào mừng đến với QBot"}
           </Text>
           <Text color={descColor} maxW="md">
-            {translations[language].chatDescription || 
-             "Tôi là trợ lý AI của bạn. Hãy bắt đầu cuộc trò chuyện bằng cách gửi tin nhắn!"}
+            {translations[language].chatDescription}
           </Text>
         </VStack>
       </VStack>

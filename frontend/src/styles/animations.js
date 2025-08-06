@@ -29,4 +29,49 @@ export const slideUp = keyframes`
   }
 `;
 
+export const VoiceAssistant = keyframes`
+  0% { 
+    transform: scale(1); 
+    opacity: 0.7; 
+  }
+  25% { 
+    transform: scale(1.1); 
+    opacity: 0.9; 
+  }
+  50% { 
+    transform: scale(1.2); 
+    opacity: 1; 
+  }
+  75% { 
+    transform: scale(1.1); 
+    opacity: 0.9; 
+  }
+  100% { 
+    transform: scale(1); 
+    opacity: 0.7; 
+  }
+`;
+
+export const voiceWave = keyframes`
+  0%, 100% { 
+    height: 20px; 
+    opacity: 0.4; 
+  }
+  50% { 
+    height: 40px; 
+    opacity: 1; 
+  }
+`;
+
+export const voiceRipple = keyframes`
+  0% {
+    transform: scale(0.8);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(2.4);
+    opacity: 0;
+  }
+`;
+
   

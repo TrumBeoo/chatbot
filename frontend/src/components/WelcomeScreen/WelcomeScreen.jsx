@@ -1,5 +1,5 @@
 // frontend/src/components/WelcomeScreen/WelcomeScreen.jsx
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Container,
@@ -7,7 +7,6 @@ import {
   HStack,
   Button,
   Text,
-  Heading,
   Modal,
   ModalOverlay,
   ModalContent,
@@ -27,16 +26,12 @@ import {
   ScaleFade,
   useColorModeValue,
 } from '@chakra-ui/react';
-import { GoogleOAuthProvider } from '@react-oauth/google';
-import { FaLanguage, FaPlay, FaUser, FaUserPlus } from 'react-icons/fa';
+import { FaLanguage, FaPlay, FaUser } from 'react-icons/fa';
 import Lottie from 'lottie-react';
 import chatbotAnimation from '../../animations/chatbot.json';
 import { translations } from '../../constants';
 import { slideUp, pulse } from '../../styles/animations';
 import SocialLoginButtons from '../SocialLogin/SocialLoginButtons';
-import environment from '../../config/environment';
-import oauthService from '../../services/oauthService';
-import AuthModal from '../Auth/AuthModal';
 import ThemeToggle from '../ThemeToggle/ThemeToggle';
 import { useTheme } from '../../contexts/ThemeContext';
 
@@ -97,7 +92,6 @@ const WelcomeScreen = ({
   });
   const [formErrors, setFormErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
-  const [socialLoginError, setSocialLoginError] = useState(null);
 
   // Hooks
   const { isOpen, onOpen, onClose } = useDisclosure();
@@ -106,12 +100,6 @@ const WelcomeScreen = ({
   // Color mode values
   const modalBg = useColorModeValue('white', 'gray.800');
   const modalColor = useColorModeValue('gray.800', 'white');
-
-  // Memoized values
-  const hasConfiguredSocialLogin = useMemo(() => 
-    environment.GOOGLE_CLIENT_ID || environment.FACEBOOK_APP_ID,
-    []
-  );
 
   // Effects
   useEffect(() => {
@@ -125,13 +113,6 @@ const WelcomeScreen = ({
     return () => clearTimeout(timer);
   }, [playWelcomeSound]);
 
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      oauthService.cleanup();
-    };
-  }, []);
-
   // Utility functions
   const resetForm = useCallback(() => {
     setFormData({
@@ -141,7 +122,6 @@ const WelcomeScreen = ({
       name: ''
     });
     setFormErrors({});
-    setSocialLoginError(null);
   }, []);
 
   const showToast = useCallback((title, description, status) => {
@@ -197,103 +177,34 @@ const WelcomeScreen = ({
     }
 
     setIsLoading(true);
-    setSocialLoginError(null);
 
     try {
       if (authMode === 'register') {
         await onRegister(formData);
-        showToast(
-          translations[language].registerSuccess || "Registration successful!",
-          translations[language].welcomeMessage || "Welcome to our platform!",
-          "success"
-        );
       } else {
         await onLogin(formData);
-        showToast(
-          translations[language].loginSuccess || "Login successful!",
-          translations[language].welcomeBack || "Welcome back!",
-          "success"
-        );
       }
       
       onClose();
       resetForm();
     } catch (error) {
-      const errorTitle = authMode === 'register' 
-        ? (translations[language].registerError || "Registration failed")
-        : (translations[language].loginError || "Login failed");
-      
-      showToast(errorTitle, error.message, "error");
+      // Error handling is done in parent component
     } finally {
       setIsLoading(false);
     }
-  }, [authMode, formData, language, onRegister, onLogin, showToast, onClose, resetForm]);
+  }, [authMode, formData, language, onRegister, onLogin, onClose, resetForm]);
 
-  // Social login handlers
+  // Social login handlers (disabled)
   const handleGoogleSuccess = useCallback(async (credentialResponse) => {
-    setIsLoading(true);
-    setSocialLoginError(null);
-
-    try {
-      await onSocialLogin('google', {
-        credential: credentialResponse.credential
-      });
-      
-      showToast(
-        translations[language].loginSuccess || "Login successful!",
-        translations[language].googleLoginSuccess || "Signed in with Google successfully!",
-        "success"
-      );
-      
-      onClose();
-      resetForm();
-    } catch (error) {
-      console.error('Google login error:', error);
-      setSocialLoginError(error.message);
-      showToast(
-        translations[language].socialLoginError || "Social login failed",
-        error.message,
-        "error"
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  }, [onSocialLogin, language, showToast, onClose, resetForm]);
+    showToast('Google Login', 'API functionality has been disabled', 'info');
+  }, [showToast]);
 
   const handleFacebookSuccess = useCallback(async (facebookData) => {
-    setIsLoading(true);
-    setSocialLoginError(null);
-
-    try {
-      await onSocialLogin('facebook', {
-        accessToken: facebookData.accessToken,
-        userID: facebookData.userID,
-        userInfo: facebookData.userInfo
-      });
-
-      showToast(
-        translations[language].loginSuccess || "Login successful!",
-        translations[language].facebookLoginSuccess || "Signed in with Facebook successfully!",
-        "success"
-      );
-
-      onClose();
-      resetForm();
-    } catch (error) {
-      console.error('Facebook login error:', error);
-      setSocialLoginError(error.message);
-      showToast(
-        translations[language].socialLoginError || "Social login failed",
-        error.message,
-        "error"
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  }, [onSocialLogin, language, showToast, onClose, resetForm]);
+    showToast('Facebook Login', 'API functionality has been disabled', 'info');
+  }, [showToast]);
 
   const handleSocialLoginError = useCallback((error) => {
-    setSocialLoginError(error);
+    // Do nothing since APIs are disabled
   }, []);
 
   const handleModalClose = useCallback(() => {
@@ -394,7 +305,6 @@ const WelcomeScreen = ({
             }}
             disabled={isLoading}
             size="md"
-           
           />
           <FormErrorMessage>{formErrors.confirmPassword}</FormErrorMessage>
         </FormControl>
@@ -403,7 +313,7 @@ const WelcomeScreen = ({
   ), [authMode, formData, handleInputChange, language, isLoading, formErrors]);
 
   // Main content
-  const content = (
+  return (
     <Box
       minH="100vh"
       bgImage="url('/img/bg.png')" 
@@ -553,225 +463,198 @@ const WelcomeScreen = ({
                 borderLeft="15px solid transparent"
                 borderRight="15px solid transparent"
                 borderTop="15px solid"
-               borderTopColor="whiteAlpha.200"
-             />
-           </Box>
-         </ScaleFade>
+                borderTopColor="whiteAlpha.200"
+              />
+            </Box>
+          </ScaleFade>
 
-         {/* Description */}
-         <Box
-           maxW="600px"
-           mt={-2}
-           animation={`${slideUp} 1.2s ease-out`}
-           animationDelay="0.8s"
-           animationFillMode="both"
-         >
-           <Text
-             fontSize={{ base: 'lg', md: '2xl' }}
-             opacity={0.9}
-             lineHeight="1.6"
-             textAlign="center"
-             fontWeight="500"
-           >
-             {translations[language]?.welcomeDescription || 
-              "I'll help you discover amazing destinations, find great restaurants, and plan your perfect trip in Quảng Ninh!"}
-           </Text>
-         </Box>
+          {/* Description */}
+          <Box
+            maxW="600px"
+            mt={-2}
+            animation={`${slideUp} 1.2s ease-out`}
+            animationDelay="0.8s"
+            animationFillMode="both"
+          >
+            <Text
+              fontSize={{ base: 'lg', md: '2xl' }}
+              opacity={0.9}
+              lineHeight="1.6"
+              textAlign="center"
+              fontWeight="500"
+            >
+              {translations[language]?.welcomeDescription || 
+               "I'll help you discover amazing destinations, find great restaurants, and plan your perfect trip in Quảng Ninh!"}
+            </Text>
+          </Box>
 
-         {/* Action Buttons */}
-         <VStack
-           spacing={4}
-           animation={`${slideUp} 1.6s ease-out`}
-           animationDelay="1.2s"
-           animationFillMode="both"
-         >
-           {/* Try Button */}
-           <Button
-             size="lg"
-             colorScheme="blue"
-             bg="blue.500"
-             color="white"
-             border="2px solid"
-             borderColor="blue.400"
-             borderRadius="full"
-             px={10}
-             py={6}
-             fontSize={{ base: 'md', md: 'lg' }}
-             fontWeight="bold"
-             leftIcon={<FaPlay />}
-             onClick={handleStart}
-             _hover={{
-               bg: 'blue.600',
-               borderColor: 'blue.300',
-               transform: 'translateY(-2px)',
-               boxShadow: '0 8px 25px rgba(66, 153, 225, 0.3)',
-             }}
-             _active={{
-               transform: 'translateY(0)',
-             }}
-             transition="all 0.3s ease"
-             boxShadow="0 4px 15px rgba(66, 153, 225, 0.2)"
-           >
-             {translations[language]?.tryButton || "Try Now"}
-           </Button>
+          {/* Action Buttons */}
+          <VStack
+            spacing={4}
+            animation={`${slideUp} 1.6s ease-out`}
+            animationDelay="1.2s"
+            animationFillMode="both"
+          >
+            {/* Try Button */}
+            <Button
+              size="lg"
+              colorScheme="blue"
+              bg="blue.500"
+              color="white"
+              border="2px solid"
+              borderColor="blue.400"
+              borderRadius="full"
+              px={10}
+              py={6}
+              fontSize={{ base: 'md', md: 'lg' }}
+              fontWeight="bold"
+              leftIcon={<FaPlay />}
+              onClick={handleStart}
+              _hover={{
+                bg: 'blue.600',
+                borderColor: 'blue.300',
+                transform: 'translateY(-2px)',
+                boxShadow: '0 8px 25px rgba(66, 153, 225, 0.3)',
+              }}
+              _active={{
+                transform: 'translateY(0)',
+              }}
+              transition="all 0.3s ease"
+              boxShadow="0 4px 15px rgba(66, 153, 225, 0.2)"
+            >
+              {translations[language]?.tryButton || "Try Now"}
+            </Button>
 
-           {/* Login/Register prompt for non-users */}
-           {!user && (
-             <Text fontSize="sm" opacity={0.8} textAlign="center">
-               {translations[language]?.loginPrompt || "Sign in to save your chat history and get personalized recommendations!"}
-               <Button
-                 variant="link"
-                 color="blue"
-                 fontSize="sm"
-                 ml={2}
-                 onClick={onOpen}
-                 _hover={{ color: 'blue.50', textDecoration: 'underline' }}
-                 fontWeight="medium"
-               >
-                 {translations[language]?.loginNow || "Sign in now"}
-               </Button>
-             </Text>
-           )}
-         </VStack>
-       </VStack>
-     </Container>
+            {/* Login/Register prompt for non-users */}
+            {!user && (
+              <Text fontSize="sm" opacity={0.8} textAlign="center">
+                {translations[language]?.loginPrompt || "Sign in to save your chat history and get personalized recommendations!"}
+                <Button
+                  variant="link"
+                  color="blue"
+                  fontSize="sm"
+                  ml={2}
+                  onClick={onOpen}
+                  _hover={{ color: 'blue.50', textDecoration: 'underline' }}
+                  fontWeight="medium"
+                >
+                  {translations[language]?.loginNow || "Sign in now"}
+                </Button>
+              </Text>
+            )}
+          </VStack>
+        </VStack>
+      </Container>
 
-     {/* Enhanced Auth Modal */}
-     <Modal 
-       isOpen={isOpen} 
-       onClose={handleModalClose} 
-       size="md" 
-       closeOnOverlayClick={!isLoading}
-       motionPreset="slideInBottom"
-     >
-       <ModalOverlay backdropFilter="blur(10px)" bg="blackAlpha.600" />
-       <ModalContent bg={modalBg} color={modalColor} borderRadius="xl" mx={4}>
-         <ModalHeader textAlign="center" pb={2}>
-           <VStack spacing={2}>
-             <Text fontSize="2xl" fontWeight="bold">
-               {authMode === 'login' 
-                 ? (translations[language]?.login || "Welcome Back")
-                 : (translations[language]?.register || "Create Account")
-               }
-             </Text>
-             <Text fontSize="sm" color="gray.500" fontWeight="normal">
-               {authMode === 'login'
-                 ? (translations[language]?.loginSubtitle )
-                 : (translations[language]?.registerSubtitle )
-               }
-             </Text>
-           </VStack>
-         </ModalHeader>
-         <ModalCloseButton isDisabled={isLoading} />
-         
-         <ModalBody pb={6}>
-           {/* Social Login Error Alert */}
-           {socialLoginError && (
-             <Alert status="error" borderRadius="md" mb={4}>
-               <AlertIcon />
-               <AlertDescription>{socialLoginError}</AlertDescription>
-             </Alert>
-           )}
+      {/* Enhanced Auth Modal */}
+      <Modal 
+        isOpen={isOpen} 
+        onClose={handleModalClose} 
+        size="md" 
+        closeOnOverlayClick={!isLoading}
+        motionPreset="slideInBottom"
+      >
+        <ModalOverlay backdropFilter="blur(10px)" bg="blackAlpha.600" />
+        <ModalContent bg={modalBg} color={modalColor} borderRadius="xl" mx={4}>
+          <ModalHeader textAlign="center" pb={2}>
+            <VStack spacing={2}>
+              <Text fontSize="2xl" fontWeight="bold">
+                {authMode === 'login' 
+                  ? (translations[language]?.login || "Welcome Back")
+                  : (translations[language]?.register || "Create Account")
+                }
+              </Text>
+              <Text fontSize="sm" color="gray.500" fontWeight="normal">
+                {authMode === 'login'
+                  ? (translations[language]?.loginSubtitle )
+                  : (translations[language]?.registerSubtitle )
+                }
+              </Text>
+            </VStack>
+          </ModalHeader>
+          <ModalCloseButton isDisabled={isLoading} />
+          
+          <ModalBody pb={6}>
+            {/* API Disabled Alert */}
+            <Alert status="info" borderRadius="md" mb={4}>
+              <AlertIcon />
+              <AlertDescription>API functionality has been disabled. Authentication is not available.</AlertDescription>
+            </Alert>
 
-           <VStack spacing={6}>
-             {/* Social Login Buttons */}
-             {hasConfiguredSocialLogin && (
-               <Box width="100%" position="relative">
-                 <SocialLoginButtons
-                   onGoogleSuccess={handleGoogleSuccess}
-                   onFacebookSuccess={handleFacebookSuccess}
-                   onError={handleSocialLoginError}
-                   language={language}
-                   onLanguageChange={onLanguageChange}
-                   isLoading={isLoading}
-                   disabled={isLoading}
-                 />
-               </Box>
-             )}
+            <VStack spacing={6}>
+              {/* Social Login Buttons (Disabled) */}
+              <Box width="100%" position="relative">
+                <SocialLoginButtons
+                  onGoogleSuccess={handleGoogleSuccess}
+                  onFacebookSuccess={handleFacebookSuccess}
+                  onError={handleSocialLoginError}
+                  language={language}
+                  onLanguageChange={onLanguageChange}
+                  isLoading={isLoading}
+                  disabled={true}
+                />
+              </Box>
 
-             {/* Divider */}
-             {hasConfiguredSocialLogin && (
-               <HStack width="100%">
-                 <Divider />
-                 <Text fontSize="sm" color="gray.500" px={3} whiteSpace="nowrap">
-                   {translations[language]?.orUseEmail || "or use email"}
-                 </Text>
-                 <Divider />
-               </HStack>
-             )}
+              {/* Divider */}
+              <HStack width="100%">
+                <Divider />
+                <Text fontSize="sm" color="gray.500" px={3} whiteSpace="nowrap">
+                  {translations[language]?.orUseEmail || "or use email"}
+                </Text>
+                <Divider />
+              </HStack>
 
-             {/* Email/Password Form */}
-             <Box as="form" onSubmit={handleAuthSubmit} width="100%">
-               <VStack spacing={4}>
-                 {renderFormFields()}
+              {/* Email/Password Form (Disabled) */}
+              <Box as="form" onSubmit={handleAuthSubmit} width="100%">
+                <VStack spacing={4}>
+                  {renderFormFields()}
 
-                 <Button
-                   type="submit"
-                   colorScheme="blue"
-                   size="lg"
-                   width="100%"
-                   mt={4}
-                   isLoading={isLoading}
-                   loadingText={
-                     authMode === 'register' 
-                       ? (translations[language]?.creatingAccount || "Creating account...")
-                       : (translations[language]?.signingIn || "Signing in...")
-                   }
-                   _hover={{
-                     transform: 'translateY(-1px)',
-                     boxShadow: 'lg'
-                   }}
-                   _active={{ transform: 'translateY(0)' }}
-                   transition="all 0.2s"
-                 >
-                   {authMode === 'login' 
-                     ? (translations[language]?.signIn || "Sign In")
-                     : (translations[language]?.createAccount || "Create Account")
-                   }
-                 </Button>
+                  <Button
+                    type="submit"
+                    colorScheme="gray"
+                    size="lg"
+                    width="100%"
+                    mt={4}
+                    isDisabled={true}
+                    onClick={() => showToast('Authentication', 'API functionality has been disabled', 'info')}
+                  >
+                    {authMode === 'login' 
+                      ? (translations[language]?.signIn || "Sign In")
+                      : (translations[language]?.createAccount || "Create Account")
+                    } (Disabled)
+                  </Button>
 
-                 {/* Switch Auth Mode */}
-                 <HStack spacing={1} justify="center" pt={2}>
-                   <Text fontSize="sm" color="gray.500">
-                     {authMode === 'login' 
-                       ? (translations[language]?.noAccount || "Don't have an account?")
-                       : (translations[language]?.hasAccount || "Already have an account?")
-                     }
-                   </Text>
-                   <Button
-                     variant="link"
-                     color="blue.500"
-                     fontSize="sm"
-                     onClick={switchAuthMode}
-                     _hover={{ color: 'blue.600', textDecoration: 'underline' }}
-                     isDisabled={isLoading}
-                     fontWeight="medium"
-                   >
-                     {authMode === 'login' 
-                       ? (translations[language]?.signUpNow || "Sign up")
-                       : (translations[language]?.signInNow || "Sign in")
-                     }
-                   </Button>
-                 </HStack>
-               </VStack>
-             </Box>
-           </VStack>
-         </ModalBody>
-       </ModalContent>
-     </Modal>
-   </Box>
- );
-
- // Wrap with GoogleOAuthProvider only if Google Client ID is available
- if (environment.GOOGLE_CLIENT_ID) {
-   return (
-     <GoogleOAuthProvider clientId={environment.GOOGLE_CLIENT_ID}>
-       {content}
-     </GoogleOAuthProvider>
-   );
- }
-
- return content;
+                  {/* Switch Auth Mode */}
+                  <HStack spacing={1} justify="center" pt={2}>
+                    <Text fontSize="sm" color="gray.500">
+                      {authMode === 'login' 
+                        ? (translations[language]?.noAccount || "Don't have an account?")
+                        : (translations[language]?.hasAccount || "Already have an account?")
+                      }
+                    </Text>
+                    <Button
+                      variant="link"
+                      color="blue.500"
+                      fontSize="sm"
+                      onClick={switchAuthMode}
+                      _hover={{ color: 'blue.600', textDecoration: 'underline' }}
+                      isDisabled={isLoading}
+                      fontWeight="medium"
+                    >
+                      {authMode === 'login' 
+                        ? (translations[language]?.signUpNow || "Sign up")
+                        : (translations[language]?.signInNow || "Sign in")
+                      }
+                    </Button>
+                  </HStack>
+                </VStack>
+              </Box>
+            </VStack>
+          </ModalBody>
+        </ModalContent>
+      </Modal>
+    </Box>
+  );
 };
 
 export default WelcomeScreen;

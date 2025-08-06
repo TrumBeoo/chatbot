@@ -1,10 +1,8 @@
 // frontend/src/App.jsx
-import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import {
   Box,
-  Container,
   Flex,
-  useDisclosure,
   useToast,
   useColorModeValue,
   Spinner,
@@ -19,13 +17,12 @@ import ChatHeader from './components/ChatbotHeader/ChatbotHeader';
 import ChatArea from './components/ChatArea/ChatArea';
 import ChatInput from './components/ChatInput/ChatInput';
 import Sidebar from './components/Sidebar/Sidebar';
+import VoiceInterface from './components/VoiceInterface/VoiceInterface';
 
 // Hooks and Constants
-import { useChatbotAPI } from './hooks/useChatbotAPI';
-import { useAuth } from './hooks/useAuth';
-import { useChatHistory } from './hooks/useChatHistory';
 import { translations, chatbotConfig } from './constants';
 import { useTheme } from './contexts/ThemeContext';
+import { apiService } from './services/api_chat';
 
 // Loading component
 const LoadingScreen = ({ message = "Loading..." }) => (
@@ -49,67 +46,24 @@ function App() {
   });
   const [inputText, setInputText] = useState('');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [messages, setMessages] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isVoiceOpen, setIsVoiceOpen] = useState(false);
   
   // Refs
   const messagesEndRef = useRef(null);
   
   // Hooks
-  const { isOpen: isSidebarDisclosed, onOpen: openSidebar, onClose: closeSidebar } = useDisclosure();
   const toast = useToast();
-  const { isLoading: isApiLoading, sendMessage, checkHealth } = useChatbotAPI(language);
-  
-  // Auth hook
-  const {
-    user,
-    isLoading: isAuthLoading,
-    isInitialized: isAuthInitialized,
-    login,
-    register,
-    logout,
-    socialLogin
-  } = useAuth();
-
-  // Chat history hook
-  const {
-    conversations,
-    currentConversation,
-    messages,
-    isLoading: isChatLoading,
-    createNewConversation,
-    selectConversation,
-    addMessage,
-    updateConversationTitle,
-    deleteConversation,
-    loadConversations
-  } = useChatHistory(user?.id);
-
-  // Memoized loading state
-  const isLoading = useMemo(() => 
-    isApiLoading || isAuthLoading || isChatLoading,
-    [isApiLoading, isAuthLoading, isChatLoading]
-  );
 
   // Save language preference
   useEffect(() => {
     localStorage.setItem('language', language);
   }, [language]);
 
-  // Effects
-  useEffect(() => {
-    if (isAuthInitialized) {
-      checkHealth().catch(console.error);
-    }
-  }, [checkHealth, isAuthInitialized]);
-
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
-
-  useEffect(() => {
-    if (user && isAuthInitialized) {
-      loadConversations().catch(console.error);
-    }
-  }, [user, loadConversations, isAuthInitialized]);
 
   // Auto-scroll to bottom
   const scrollToBottom = useCallback(() => {
@@ -137,100 +91,11 @@ function App() {
   const handleLanguageChange = useCallback(() => {
     const newLang = language === 'vi' ? 'en' : 'vi';
     setLanguage(newLang);
-    
-    /*showToast(
-      translations[newLang].languageChanged || "Language changed",
-      `${translations[newLang].languageSwitch} → ${language === 'vi' ? 'English' : 'Tiếng Việt'}`,
-      "info"
-    );*/
   }, [language]);
 
   const handleStartChat = useCallback(() => {
     setShowWelcome(false);
-    
-    // Create new conversation for authenticated users
-    if (user && !currentConversation) {
-      createNewConversation().catch(console.error);
-    }
-  }, [user, currentConversation, createNewConversation]);
-
-  const handleLogin = useCallback(async (credentials) => {
-    try {
-      await login(credentials);
-      showToast(
-        translations[language].loginSuccess || "Login successful!",
-        translations[language].welcomeBack || "Welcome back!",
-        "success"
-      );
-    } catch (error) {
-      showToast(
-        translations[language].loginError || "Login failed",
-        error.message,
-        "error"
-      );
-      throw error;
-    }
-  }, [login, language, showToast]);
-
-  const handleRegister = useCallback(async (formData) => {
-    try {
-      await register(formData);
-      showToast(
-        translations[language].registerSuccess || "Registration successful!",
-        translations[language].welcomeMessage || "Welcome to our platform!",
-        "success"
-      );
-    } catch (error) {
-      showToast(
-        translations[language].registerError || "Registration failed",
-        error.message,
-        "error"
-      );
-      throw error;
-    }
-  }, [register, language, showToast]);
-
-  const handleSocialLogin = useCallback(async (provider, credentials) => {
-    try {
-      await socialLogin(provider, credentials);
-      const successMessage = provider === 'google' 
-        ? (translations[language].googleLoginSuccess || "Signed in with Google successfully!")
-        : (translations[language].facebookLoginSuccess || "Signed in with Facebook successfully!");
-      
-      showToast(
-        translations[language].loginSuccess || "Login successful!",
-        successMessage,
-        "success"
-      );
-    } catch (error) {
-      showToast(
-        translations[language].socialLoginError || "Social login failed",
-        error.message,
-        "error"
-      );
-      throw error;
-    }
-  }, [socialLogin, language, showToast]);
-
-  const handleLogout = useCallback(async () => {
-    try {
-      await logout();
-      setShowWelcome(true);
-      showToast(
-        translations[language].logoutSuccess || "Signed out successfully!",
-        translations[language].goodbye || "Come back soon!",
-        "info"
-      );
-    } catch (error) {
-      console.error('Logout error:', error);
-      // Still show success message as user is logged out locally
-      showToast(
-        translations[language].logoutSuccess || "Signed out successfully!",
-        null,
-        "info"
-      );
-    }
-  }, [logout, language, showToast]);
+  }, []);
 
   const handleSend = useCallback(async (messageText = inputText) => {
     if (!messageText?.trim()) return;
@@ -246,64 +111,64 @@ function App() {
     };
 
     // Add user message immediately
-    addMessage(userMessage);
-
-    // Create loading message
-    const loadingMessage = {
-      id: `loading-${Date.now()}`,
-      text: translations[language].thinking || 'Thinking...',
-      sender: 'bot',
-      isLoading: true,
-      timestamp: new Date().toISOString()
-    };
-    addMessage(loadingMessage);
+    setMessages(prev => [...prev, userMessage]);
+    setInputText('');
+    setIsLoading(true);
 
     try {
-      const response = await sendMessage(trimmedMessage);
+      // Call the backend API
+      const response = await apiService.sendMessage(trimmedMessage);
       
-      // Create bot response message
-      const botMessage = {
-        id: `bot-${Date.now()}`,
-        text: response.response || response.message || 'No response received',
-        sender: 'bot',
-        audioUrl: response.audio_url,
-        timestamp: new Date().toISOString()
-      };
+      if (response.success) {
+        // Create bot response message
+        const botMessage = {
+          id: `bot-${Date.now()}`,
+          text: response.message,
+          sender: 'bot',
+          timestamp: new Date().toISOString()
+        };
 
-      // Replace loading message with bot response
-      addMessage(botMessage, loadingMessage.id);
+        setMessages(prev => [...prev, botMessage]);
+      } else {
+        // Handle API error
+        const errorMessage = {
+          id: `bot-${Date.now()}`,
+          text: response.error || 'Xin lỗi, tôi đang gặp sự cố. Vui lòng thử lại sau.',
+          sender: 'bot',
+          timestamp: new Date().toISOString(),
+          isError: true
+        };
 
-      // Update conversation title for first message
-      if (messages.length === 0 && currentConversation) {
-        const title = trimmedMessage.length > 30 
-          ? trimmedMessage.substring(0, 30) + '...' 
-          : trimmedMessage;
-        updateConversationTitle(currentConversation.id, title).catch(console.error);
+        setMessages(prev => [...prev, errorMessage]);
+        
+        showToast(
+          'Lỗi kết nối',
+          response.error || 'Không thể kết nối đến server',
+          'error'
+        );
       }
     } catch (error) {
-      console.error('Send message error:', error);
-      
-      // Remove loading message and show error
-      addMessage(null, loadingMessage.id);
+      console.error('Error sending message:', error);
       
       const errorMessage = {
-        id: `error-${Date.now()}`,
-        text: translations[language].messageError || "Sorry, I couldn't process your message. Please try again.",
+        id: `bot-${Date.now()}`,
+        text: 'Xin lỗi, tôi đang gặp sự cố. Vui lòng thử lại sau.',
         sender: 'bot',
-        isError: true,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        isError: true
       };
-      addMessage(errorMessage);
+
+      setMessages(prev => [...prev, errorMessage]);
       
       showToast(
-        translations[language].messageError || "Message failed",
-        error.message,
-        "error"
+        'Lỗi kết nối',
+        'Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng.',
+        'error'
       );
     } finally {
-      setInputText('');
+      setIsLoading(false);
     }
-  }, [inputText, addMessage, sendMessage, messages.length, currentConversation, updateConversationTitle, language, showToast]);
+  }, [inputText, language, showToast]);
 
   const handleSubmit = useCallback((e) => {
     e.preventDefault();
@@ -312,39 +177,26 @@ function App() {
     }
   }, [handleSend, isLoading, inputText]);
 
-  const handleNewConversation = useCallback(() => {
-    createNewConversation().catch(console.error);
-  }, [createNewConversation]);
-
-  const handleSelectConversation = useCallback((conversationId) => {
-    selectConversation(conversationId).catch(console.error);
-  }, [selectConversation]);
-
-  const handleDeleteConversation = useCallback(async (conversationId) => {
-    try {
-      await deleteConversation(conversationId);
-      showToast(
-        translations[language].conversationDeleted || "Conversation deleted",
-        null,
-        "info"
-      );
-    } catch (error) {
-      showToast(
-        translations[language].deleteError || "Failed to delete conversation",
-        error.message,
-        "error"
-      );
-    }
-  }, [deleteConversation, language, showToast]);
-
   const toggleSidebar = useCallback(() => {
     setIsSidebarOpen(prev => !prev);
   }, []);
 
-  // Show loading screen while auth is initializing
-  if (!isAuthInitialized) {
-    return <LoadingScreen message={translations[language].initializing || "Initializing..."} />;
-  }
+  // Voice handlers
+  const handleVoiceClick = useCallback(() => {
+    setIsVoiceOpen(true);
+  }, []);
+
+  const handleVoiceClose = useCallback(() => {
+    setIsVoiceOpen(false);
+  }, []);
+
+  const handleVoiceResult = useCallback((transcript) => {
+    if (transcript.trim()) {
+      setInputText(transcript);
+      // Optionally auto-send the voice message
+      handleSend(transcript);
+    }
+  }, [handleSend]);
 
   // Render welcome screen
   if (showWelcome) {
@@ -353,11 +205,12 @@ function App() {
         language={language}
         onStart={handleStartChat}
         onLanguageChange={handleLanguageChange}
-        onRegister={handleRegister}
-        onLogin={handleLogin}
-        onSocialLogin={handleSocialLogin}
-        onLogout={handleLogout}
-        user={user}
+        // Remove all auth-related props since APIs are disabled
+        onRegister={() => showToast('Registration', 'API functionality has been disabled', 'info')}
+        onLogin={() => showToast('Login', 'API functionality has been disabled', 'info')}
+        onSocialLogin={() => showToast('Social Login', 'API functionality has been disabled', 'info')}
+        onLogout={() => showToast('Logout', 'API functionality has been disabled', 'info')}
+        user={null} // No user since auth is disabled
       />
     );
   }
@@ -369,12 +222,12 @@ function App() {
       <Sidebar
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
-        conversations={conversations}
-        currentConversation={currentConversation}
-        onSelectConversation={handleSelectConversation}
-        onNewConversation={handleNewConversation}
-        onDeleteConversation={handleDeleteConversation}
-        user={user}
+        conversations={[]} // Empty since API is disabled
+        currentConversation={null}
+        onSelectConversation={() => {}}
+        onNewConversation={() => {}}
+        onDeleteConversation={() => {}}
+        user={null} // No user since auth is disabled
         language={language}
       />
 
@@ -384,12 +237,13 @@ function App() {
           language={language}
           onLanguageChange={handleLanguageChange}
           onToggleSidebar={toggleSidebar}
-          user={user}
-          onLogout={handleLogout}
-          onLogin={handleLogin}
-          onRegister={handleRegister}
-          onSocialLogin={handleSocialLogin}
-          currentConversation={currentConversation}
+          user={null} // No user since auth is disabled
+          // Remove all auth-related props since APIs are disabled
+          onLogout={() => showToast('Logout', 'API functionality has been disabled', 'info')}
+          onLogin={() => showToast('Login', 'API functionality has been disabled', 'info')}
+          onRegister={() => showToast('Registration', 'API functionality has been disabled', 'info')}
+          onSocialLogin={() => showToast('Social Login', 'API functionality has been disabled', 'info')}
+          currentConversation={null}
           config={chatbotConfig}
         />
         
@@ -413,6 +267,7 @@ function App() {
                 isLoading={isLoading}
                 language={language}
                 config={chatbotConfig}
+                onVoiceClick={handleVoiceClick}
               />
             </Box>
           </Flex>
@@ -435,10 +290,19 @@ function App() {
               isLoading={isLoading}
               language={language}
               config={chatbotConfig}
+              onVoiceClick={handleVoiceClick}
             />
           </>
         )}
       </Flex>
+
+      {/* Voice Interface Modal */}
+      <VoiceInterface
+        isOpen={isVoiceOpen}
+        onClose={handleVoiceClose}
+        onVoiceResult={handleVoiceResult}
+        language={language}
+      />
     </Flex>
   );
 }

@@ -9,6 +9,7 @@ import {
   useColorModeValue,
 } from '@chakra-ui/react';
 import { FaPaperPlane, FaPlus } from 'react-icons/fa';
+import { HiArrowUp } from "react-icons/hi";
 import { useRef, useEffect } from 'react';
 import { translations } from '../../constants';
 
@@ -69,7 +70,7 @@ const ChatInput = ({
           }}
           transition="all 0.2s"
         >
-          <Tooltip label="Thêm tiện ích">
+         <Tooltip label={translations[language].addExtension}>
             <IconButton
               icon={<FaPlus />}
               size="sm"
@@ -108,9 +109,9 @@ const ChatInput = ({
           />
 
           {config?.features?.voiceEnabled && (
-            <Tooltip label="Ghi âm" hasArrow>
+            <Tooltip label={translations[language].voiceAssistant}>
               <IconButton
-                icon={<Image src="/img/voice-chat.png" boxSize="24px" alt="voice" />}
+                icon={<Image src="/img/voice-chat.png" boxSize="30px" alt="voice" />}
                 size="sm"
                 variant="ghost"
                 aria-label="voice"
@@ -122,9 +123,9 @@ const ChatInput = ({
             </Tooltip>
           )}
 
-          <Tooltip label={translations[language].sendMessage || 'Gửi'}>
+          <Tooltip label={translations[language].sendMessage}>
             <IconButton
-              icon={<FaPaperPlane />}
+               icon={<HiArrowUp />}
               colorScheme="blue"
               type="submit"
               size="sm"

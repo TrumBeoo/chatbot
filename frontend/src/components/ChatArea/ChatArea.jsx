@@ -52,7 +52,7 @@ const ChatArea = ({
               <VStack spacing={2}>
                 <Spinner color="blue.500" />
                 <Text fontSize="sm" color="gray.500">
-                  {translations[language].thinking || "Đang suy nghĩ..."}
+                  {translations[language].thinking}
                 </Text>
               </VStack>
             </Center>

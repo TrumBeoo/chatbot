@@ -6,12 +6,14 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+
 app = Flask(__name__)
 CORS(app) # Cho phép cross-origin requests
 
 # Cấu hình Groq API
 GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")  # thay bằng key thật
+print("GROQ_API_KEY:", GROQ_API_KEY)  # kiểm tra có bị None không
 
 headers = {
     "Authorization": f"Bearer {GROQ_API_KEY}",
@@ -48,29 +50,26 @@ def chat():
 
         # Gọi Groq API
         response = requests.post(GROQ_API_URL, headers=headers, json=data)
-        response.raise_for_status()  # Raise exception cho HTTP errors
-        
+        response.raise_for_status()
+
         # Lấy phản hồi từ API
         bot_response = response.json()["choices"][0]["message"]["content"]
-        
-        # Loại bỏ các ký tự đặc biệt và dấu câu thừa
         bot_response = bot_response.replace('*', '')  # Loại bỏ dấu sao
-      
-        
-           
 
-        # Đảm bảo câu kết thúc bằng dấu câu phù hợp
         if bot_response and not bot_response[-1] in ['.', '!', '?']:
             bot_response += '.'
-        
+
         return jsonify({
             "status": "success",
             "response": bot_response
         })
 
-    except:
-        print("Tôi đang gặp sự cố, vui lòng thử lại sau.")
-  
+    except Exception as e:
+        print("Tôi đang gặp sự cố, vui lòng thử lại sau.", str(e))
+        return jsonify({
+            "status": "error",
+            "message": "Tôi đang gặp sự cố, vui lòng thử lại sau."
+        }), 500
 
 @app.route('/health', methods=['GET'])
 def health_check():

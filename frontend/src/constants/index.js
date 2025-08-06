@@ -29,7 +29,7 @@ export const translations = {
     loginNow: 'Đăng nhập ngay',
     registerNow: 'Đăng ký ngay',
     loginSubtitle: 'Đăng nhập vào tài khoản của bạn',
-    //registerSubtitle: 'Tham gia với chúng tôi để bắt đầu',
+    registerSubtitle: 'Tạo một tài khoản mới',
     welcomeBack: 'Chào mừng trở lại',
     
     // Form fields
@@ -86,10 +86,13 @@ export const translations = {
     logout: 'Đăng xuất',
     
     // Chat interface
+    voiceAssistant:"Chế độ thoại",
+    addExtension: "Thêm tiện ích",
     sendMessage: 'Gửi tin nhắn',
     thinking: 'Đang suy nghĩ...',
     copyMessage: 'Sao chép tin nhắn',
     playAudio: 'Phát âm thanh',
+    apiDisabled: 'Chức năng API đã bị vô hiệu hóa. Đây là phản hồi demo.',
     
     // Theme
     darkMode: 'Chế độ tối',
@@ -98,7 +101,7 @@ export const translations = {
     
     // Empty state
     welcomeToChat: 'Chào mừng đến với QBot',
-    chatDescription: 'Tôi là trợ lý AI của bạn. Hãy bắt đầu cuộc trò chuyện bằng cách gửi tin nhắn!',
+    chatDescription: 'Tôi là trợ lý du lịch thông minh của bạn. Hãy bắt đầu cuộc trò chuyện bằng cách gửi tin nhắn!',
     suggestions: 'Gợi ý:',
     askQuestion: 'Đặt câu hỏi',
     askQuestionDesc: 'Hỏi bất cứ điều gì bạn muốn biết',
@@ -139,7 +142,7 @@ export const translations = {
     loginNow: 'Sign in now',
     registerNow: 'Sign up now',
     loginSubtitle: 'Sign in to your account',
-    //registerSubtitle: 'Join us to get started',
+    registerSubtitle: 'Create a new account',
     welcomeBack: 'Welcome Back',
     
     // Form fields
@@ -196,10 +199,13 @@ export const translations = {
     logout: 'Sign Out',
     
     // Chat interface
+    voiceAssistant: "Voice mode",
+    addExtension: "Add an extension",
     sendMessage: 'Send message',
     thinking: 'Thinking...',
     copyMessage: 'Copy message',
     playAudio: 'Play audio',
+    apiDisabled: 'API functionality has been disabled. This is a demo response.',
     
     // Theme
     darkMode: 'Dark Mode',
@@ -208,7 +214,7 @@ export const translations = {
     
     // Empty state
     welcomeToChat: 'Welcome to QBot',
-    chatDescription: 'I am your AI assistant. Start a conversation by sending a message!',
+    chatDescription: 'I am your smart travel assistant. Start a conversation by sending a message!',
     suggestions: 'Suggestions:',
     askQuestion: 'Ask a question',
     askQuestionDesc: 'Ask anything you want to know',

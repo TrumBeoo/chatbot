@@ -1,5 +1,5 @@
 // frontend/src/components/Auth/AuthModal.jsx
-import React, { useState, useCallback, useMemo } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   Modal,
   ModalOverlay,
@@ -22,10 +22,8 @@ import {
   Box,
   useColorModeValue,
 } from '@chakra-ui/react';
-import { GoogleOAuthProvider } from '@react-oauth/google';
 import SocialLoginButtons from '../SocialLogin/SocialLoginButtons';
 import { translations } from '../../constants';
-import environment from '../../config/environment';
 
 // Form validation function
 const validateForm = (formData, authMode, language) => {
@@ -81,15 +79,9 @@ const AuthModal = ({
   });
   const [formErrors, setFormErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
-  const [socialLoginError, setSocialLoginError] = useState(null);
 
   const modalBg = useColorModeValue('white', 'gray.800');
   const modalColor = useColorModeValue('gray.800', 'white');
-
-  const hasConfiguredSocialLogin = useMemo(() => 
-    environment.GOOGLE_CLIENT_ID || environment.FACEBOOK_APP_ID,
-    []
-  );
 
   const resetForm = useCallback(() => {
     setFormData({
@@ -99,7 +91,6 @@ const AuthModal = ({
       name: ''
     });
     setFormErrors({});
-    setSocialLoginError(null);
   }, []);
 
   const handleInputChange = useCallback((e) => {
@@ -133,7 +124,6 @@ const AuthModal = ({
     }
 
     setIsLoading(true);
-    setSocialLoginError(null);
 
     try {
       if (authMode === 'register') {
@@ -152,45 +142,15 @@ const AuthModal = ({
   }, [authMode, formData, language, onRegister, onLogin, onClose, resetForm]);
 
   const handleGoogleSuccess = useCallback(async (credentialResponse) => {
-    setIsLoading(true);
-    setSocialLoginError(null);
-
-    try {
-      await onSocialLogin('google', {
-        credential: credentialResponse.credential
-      });
-      
-      onClose();
-      resetForm();
-    } catch (error) {
-      setSocialLoginError(error.message);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [onSocialLogin, onClose, resetForm]);
+    // API disabled - do nothing
+  }, []);
 
   const handleFacebookSuccess = useCallback(async (facebookData) => {
-    setIsLoading(true);
-    setSocialLoginError(null);
-
-    try {
-      await onSocialLogin('facebook', {
-        accessToken: facebookData.accessToken,
-        userID: facebookData.userID,
-        userInfo: facebookData.userInfo
-      });
-
-      onClose();
-      resetForm();
-    } catch (error) {
-      setSocialLoginError(error.message);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [onSocialLogin, onClose, resetForm]);
+    // API disabled - do nothing
+  }, []);
 
   const handleSocialLoginError = useCallback((error) => {
-    setSocialLoginError(error);
+    // API disabled - do nothing
   }, []);
 
   const handleModalClose = useCallback(() => {
@@ -297,7 +257,7 @@ const AuthModal = ({
     </VStack>
   ), [authMode, formData, handleInputChange, language, isLoading, formErrors]);
 
-  const content = (
+  return (
     <Modal 
       isOpen={isOpen} 
       onClose={handleModalClose} 
@@ -318,7 +278,7 @@ const AuthModal = ({
             <Text fontSize="sm" color="gray.500" fontWeight="normal">
               {authMode === 'login'
                 ? (translations[language]?.loginSubtitle || "Sign in to your account")
-                : (translations[language]?.registerSubtitle || "Create a new account")
+                : (translations[language]?.registerSubtitle || "")
               }
             </Text>
           </VStack>
@@ -326,69 +286,53 @@ const AuthModal = ({
         <ModalCloseButton isDisabled={isLoading} />
         
         <ModalBody pb={6}>
-          {/* Social Login Error Alert */}
-          {socialLoginError && (
-            <Alert status="error" borderRadius="md" mb={4}>
-              <AlertIcon />
-              <AlertDescription>{socialLoginError}</AlertDescription>
-            </Alert>
-          )}
+          {/* API Disabled Alert */}
+          <Alert status="info" borderRadius="md" mb={4}>
+            <AlertIcon />
+            <AlertDescription>API functionality has been disabled. Authentication is not available.</AlertDescription>
+          </Alert>
 
           <VStack spacing={6}>
-            {/* Social Login Buttons */}
-            {hasConfiguredSocialLogin && (
-              <Box width="100%" position="relative">
-                <SocialLoginButtons
-                  onGoogleSuccess={handleGoogleSuccess}
-                  onFacebookSuccess={handleFacebookSuccess}
-                  onError={handleSocialLoginError}
-                  language={language}
-                  onLanguageChange={onLanguageChange}
-                  isLoading={isLoading}
-                  disabled={isLoading}
-                />
-              </Box>
-            )}
+            {/* Social Login Buttons (Disabled) */}
+            <Box width="100%" position="relative">
+              <SocialLoginButtons
+                onGoogleSuccess={handleGoogleSuccess}
+                onFacebookSuccess={handleFacebookSuccess}
+                onError={handleSocialLoginError}
+                language={language}
+                onLanguageChange={onLanguageChange}
+                isLoading={isLoading}
+                disabled={true}
+              />
+            </Box>
 
             {/* Divider */}
-            {hasConfiguredSocialLogin && (
-              <HStack width="100%">
-                <Divider />
-                <Text fontSize="sm" color="gray.500" px={3} whiteSpace="nowrap">
-                  {translations[language]?.orUseEmail || "or use email"}
-                </Text>
-                <Divider />
-              </HStack>
-            )}
+            <HStack width="100%">
+              <Divider />
+              <Text fontSize="sm" color="gray.500" px={3} whiteSpace="nowrap">
+                {translations[language]?.orUseEmail || "or use email"}
+              </Text>
+              <Divider />
+            </HStack>
 
-            {/* Email/Password Form */}
+            {/* Email/Password Form (Disabled) */}
             <Box as="form" onSubmit={handleAuthSubmit} width="100%">
               <VStack spacing={4}>
                 {renderFormFields()}
 
                 <Button
-                  type="submit"
-                  colorScheme="blue"
+                  type="button"
+                  colorScheme="gray"
                   size="lg"
                   width="100%"
                   mt={4}
-                  isLoading={isLoading}
-                  loadingText={
-                    authMode === 'register' 
-                      ? (translations[language]?.creatingAccount || "Creating account...")
-                      : (translations[language]?.signingIn || "Signing in...")
-                  }
-                  _hover={{
-                    transform: 'translateY(-1px)',
-                    boxShadow: 'lg'
-                  }}
-                  _active={{ transform: 'translateY(0)' }}
-                  transition="all 0.2s"
+                  isDisabled={true}
+                  onClick={() => {}}
                 >
                   {authMode === 'login' 
                     ? (translations[language]?.signIn || "Sign In")
                     : (translations[language]?.createAccount || "Create Account")
-                  }
+                  } (Disabled)
                 </Button>
 
                 {/* Switch Auth Mode */}
@@ -421,17 +365,6 @@ const AuthModal = ({
       </ModalContent>
     </Modal>
   );
-
-  // Wrap with GoogleOAuthProvider if available
-  if (environment.GOOGLE_CLIENT_ID) {
-    return (
-      <GoogleOAuthProvider clientId={environment.GOOGLE_CLIENT_ID}>
-        {content}
-      </GoogleOAuthProvider>
-    );
-  }
-
-  return content;
 };
 
 export default AuthModal;
