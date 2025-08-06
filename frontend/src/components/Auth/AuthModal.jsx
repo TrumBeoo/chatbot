@@ -69,6 +69,7 @@ const AuthModal = ({
   onRegister,
   onSocialLogin,
   language,
+  onLanguageChange,
   initialMode = 'login'
 }) => {
   const [authMode, setAuthMode] = useState(initialMode);
@@ -243,6 +244,7 @@ const AuthModal = ({
           }}
           disabled={isLoading}
           size="md"
+          w="sm"
         />
         <FormErrorMessage>{formErrors.email}</FormErrorMessage>
       </FormControl>
@@ -341,6 +343,7 @@ const AuthModal = ({
                   onFacebookSuccess={handleFacebookSuccess}
                   onError={handleSocialLoginError}
                   language={language}
+                  onLanguageChange={onLanguageChange}
                   isLoading={isLoading}
                   disabled={isLoading}
                 />

@@ -1,5 +1,5 @@
 // frontend/src/components/SocialLogin/SocialLoginButtons.jsx
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import {
   VStack,
   Button,
@@ -10,6 +10,8 @@ import {
   Spinner,
   Box,
   Divider,
+  Image,
+  Flex,
 } from '@chakra-ui/react';
 import { GoogleLogin } from '@react-oauth/google';
 import { FaGoogle, FaFacebook, FaExclamationTriangle } from 'react-icons/fa';
@@ -22,6 +24,7 @@ const SocialLoginButtons = ({
   onFacebookSuccess,
   onError,
   language,
+  onLanguageChange,
   isLoading: parentLoading = false,
   disabled = false,
 }) => {
@@ -29,6 +32,7 @@ const SocialLoginButtons = ({
     google: false,
     facebook: false,
   });
+  const googleLoginRef = useRef(null);
   const toast = useToast();
 
   const showError = useCallback((message) => {
@@ -64,6 +68,16 @@ const SocialLoginButtons = ({
     console.error('Google login error:', error);
     showError('Google login failed. Please try again.');
   }, [showError]);
+
+  const handleCustomGoogleClick = useCallback(() => {
+    if (googleLoginRef.current) {
+      // Find the actual Google button inside the GoogleLogin component
+      const googleButton = googleLoginRef.current.querySelector('div[role="button"]');
+      if (googleButton) {
+        googleButton.click();
+      }
+    }
+  }, []);
 
   const handleFacebookLogin = useCallback(async () => {
     setIsLoading(prev => ({ ...prev, facebook: true }));
@@ -105,23 +119,77 @@ const SocialLoginButtons = ({
         {translations[language].orLoginWith}
       </Text>
 
-      {/* Google Login */}
+      {/* Custom Google Login */}
       {environment.GOOGLE_CLIENT_ID && (
-        <Box width="100%">
-          <GoogleLogin
-            onSuccess={handleGoogleSuccess}
-            onError={handleGoogleError}
-            theme="outline"
-            size="large"
-            text="signin_with"
-            shape="rectangular"
-            logo_alignment="center"
+        <VStack width="100%" spacing={2}>
+          {/* Custom Google Login Button */}
+          <Button
             width="100%"
-            disabled={disabled || isAnyLoading}
-            useOneTap={false}
-            auto_select={false}
-            context="signin"
-          />
+            size="lg"
+            variant="outline"
+            borderColor="gray.300"
+            fontFamily="Inter"
+            bg="white"
+            color="black"
+            fontWeight="medium"
+            isDisabled={disabled || isAnyLoading}
+            isLoading={isLoading.google}
+            loadingText={translations[language].signingInWithGoogle}
+            onClick={handleCustomGoogleClick}
+            _hover={{ 
+              bg: 'gray.300', 
+              borderColor: 'gray.400',
+              transform: 'translateY(-1px)',
+              boxShadow: 'md'
+            }}
+            _active={{ transform: 'translateY(0)' }}
+            transition="all 0.2s"
+            leftIcon={
+              isLoading.google ? (
+                <Spinner size="sm" color="blue.500" />
+              ) : (
+                <img
+                src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg"
+                alt='Google'
+                width="25"
+                height="20"
+                style={{ marginRight: 3 }}
+        />
+              )
+            }
+          >
+            {!isLoading.google && translations[language].loginWithGoogle}
+          </Button>
+
+         {/* Hidden Google Login Component */}
+          <Box 
+            ref={googleLoginRef}
+            position="absolute" 
+            top={0} 
+            left={0} 
+            opacity={0} 
+            pointerEvents="none" 
+            zIndex={-1}
+            width="0"
+            height="0"
+            overflow="hidden"
+          >
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={handleGoogleError}
+              theme="outline"
+              size="large"
+              //text="signin_with"
+              shape="rectangular"
+              logo_alignment="center"
+              width="100%"
+              disabled={disabled || isAnyLoading}
+              useOneTap={false}
+              auto_select={false}
+              context="signin"
+            />
+          </Box>
+
           {isLoading.google && (
             <HStack justify="center" mt={2}>
               <Spinner size="sm" color="blue.500" />
@@ -130,26 +198,34 @@ const SocialLoginButtons = ({
               </Text>
             </HStack>
           )}
-        </Box>
+        </VStack>
       )}
 
       {/* Facebook Login */}
       {environment.FACEBOOK_APP_ID && (
         <Box width="100%">
           <Button
-            leftIcon={isLoading.facebook ? <Spinner size="sm" /> : <FaFacebook />}
+           leftIcon={
+                <img
+                  src="https://upload.wikimedia.org/wikipedia/commons/0/05/Facebook_Logo_%282019%29.png"
+                  alt="Facebook"
+                  width="25"
+                  height="20"
+                />
+              }
             colorScheme="facebook"
             variant="outline"
-            size="md"
+            size="lg"
             width="100%"
             onClick={handleFacebookLogin}
             isDisabled={disabled || isAnyLoading}
             isLoading={isLoading.facebook}
             loadingText={translations[language].signingInWithFacebook || 'Signing in...'}
-            _hover={{ 
-              bg: 'facebook.50', 
-              borderColor: 'facebook.300',
-              transform: 'translateY(-1px)'
+           _hover={{ 
+              bg: 'gray.300', 
+              borderColor: 'gray.400',
+              transform: 'translateY(-1px)',
+              boxShadow: 'md'
             }}
             _active={{ transform: 'translateY(0)' }}
             transition="all 0.2s"

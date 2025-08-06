@@ -28,6 +28,8 @@ import {
 } from 'react-icons/fa';
 import { translations } from '../../constants';
 import AuthModal from '../Auth/AuthModal';
+import ThemeToggle from '../ThemeToggle/ThemeToggle';
+import { useTheme } from '../../contexts/ThemeContext';
 
 const ChatHeader = ({
   language,
@@ -41,8 +43,7 @@ const ChatHeader = ({
   currentConversation,
   config,
 }) => {
-  const bgColor = useColorModeValue('white', 'gray.800');
-  const borderColor = useColorModeValue('gray.200', 'gray.700');
+  const { headerBg, borderPrimary, textPrimary, textSecondary, isDark } = useTheme();
   
   // Modal controls
   const { isOpen: isAuthModalOpen, onOpen: openAuthModal, onClose: closeAuthModal } = useDisclosure();
@@ -50,9 +51,9 @@ const ChatHeader = ({
   return (
     <>
       <Box
-        bg={bgColor}
+        bg={headerBg}
         borderBottomWidth="1px"
-        borderColor={borderColor}
+        borderColor={borderPrimary}
         px={4}
         py={3}
         boxShadow="sm"
@@ -71,18 +72,18 @@ const ChatHeader = ({
             <HStack spacing={3}>
               <Box
                 p={2}
-                bg="blue.100"
+                bg={isDark ? 'blue.800' : 'blue.100'}
                 borderRadius="md"
-                color="blue.600"
+                color={isDark ? 'blue.300' : 'blue.600'}
               >
                 <FaRobot size="20px" />
               </Box>
               <Box>
-                <Heading size="md" color="gray.800">
+                <Heading size="md" color={textPrimary}>
                   {config.name}
                 </Heading>
                 {currentConversation && (
-                  <Text fontSize="sm" color="gray.500" isTruncated maxW="200px">
+                  <Text fontSize="sm" color={textSecondary} isTruncated maxW="200px">
                     {currentConversation.title || translations[language].newConversation}
                   </Text>
                 )}
@@ -98,6 +99,8 @@ const ChatHeader = ({
 
           {/* Right Section */}
           <HStack spacing={3}>
+            <ThemeToggle size="sm" />
+            
             <Button
               leftIcon={<FaLanguage />}
               onClick={onLanguageChange}

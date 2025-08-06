@@ -28,7 +28,7 @@ export const translations = {
     signUpNow: 'Đăng ký',
     loginNow: 'Đăng nhập ngay',
     registerNow: 'Đăng ký ngay',
-    //loginSubtitle: 'Đăng nhập vào tài khoản của bạn',
+    loginSubtitle: 'Đăng nhập vào tài khoản của bạn',
     //registerSubtitle: 'Tham gia với chúng tôi để bắt đầu',
     welcomeBack: 'Chào mừng trở lại',
     
@@ -52,12 +52,13 @@ export const translations = {
     passwordMismatch: 'Mật khẩu không khớp',
     
     // Social login
-    loginWithGoogle: 'Tiếp tục với Google',
-    loginWithFacebook: 'Đăng nhập bằng Facebook',
+    loginWithGoogle: 'Google',
+    loginWithFacebook: 'Facebook',
     //orLoginWith: 'Hoặc đăng nhập bằng',
     orUseEmail: 'hoặc sử dụng email',
     socialLoginNotConfigured: 'Đăng nhập xã hội chưa được cấu hình',
     contactAdmin: 'Vui lòng liên hệ quản trị viên',
+    switchLanguage: 'Chuyển ngôn ngữ',
     
     // Loading states
     signingIn: 'Đang đăng nhập...',
@@ -89,6 +90,11 @@ export const translations = {
     thinking: 'Đang suy nghĩ...',
     copyMessage: 'Sao chép tin nhắn',
     playAudio: 'Phát âm thanh',
+    
+    // Theme
+    darkMode: 'Chế độ tối',
+    lightMode: 'Chế độ sáng',
+    toggleTheme: 'Chuyển đổi chủ đề',
     
     // Empty state
     welcomeToChat: 'Chào mừng đến với QBot',
@@ -132,7 +138,7 @@ export const translations = {
     signUpNow: 'Sign up',
     loginNow: 'Sign in now',
     registerNow: 'Sign up now',
-    //loginSubtitle: 'Sign in to your account',
+    loginSubtitle: 'Sign in to your account',
     //registerSubtitle: 'Join us to get started',
     welcomeBack: 'Welcome Back',
     
@@ -156,12 +162,13 @@ export const translations = {
     passwordMismatch: 'Passwords do not match',
     
     // Social login
-    loginWithGoogle: 'Continue with Google',
-    loginWithFacebook: 'Login with Facebook',
+    loginWithGoogle: 'Google',
+    loginWithFacebook: 'Facebook',
     //orLoginWith: 'Or sign in with',
     orUseEmail: 'or use email',
     socialLoginNotConfigured: 'Social login not configured',
     contactAdmin: 'Please contact administrator',
+    switchLanguage: 'Switch Language',
     
     // Loading states
     signingIn: 'Signing in...',
@@ -193,6 +200,11 @@ export const translations = {
     thinking: 'Thinking...',
     copyMessage: 'Copy message',
     playAudio: 'Play audio',
+    
+    // Theme
+    darkMode: 'Dark Mode',
+    lightMode: 'Light Mode',
+    toggleTheme: 'Toggle Theme',
     
     // Empty state
     welcomeToChat: 'Welcome to QBot',

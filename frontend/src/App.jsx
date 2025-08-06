@@ -25,6 +25,7 @@ import { useChatbotAPI } from './hooks/useChatbotAPI';
 import { useAuth } from './hooks/useAuth';
 import { useChatHistory } from './hooks/useChatHistory';
 import { translations, chatbotConfig } from './constants';
+import { useTheme } from './contexts/ThemeContext';
 
 // Loading component
 const LoadingScreen = ({ message = "Loading..." }) => (
@@ -37,6 +38,9 @@ const LoadingScreen = ({ message = "Loading..." }) => (
 );
 
 function App() {
+  // Theme hook
+  const { bgSecondary } = useTheme();
+  
   // States
   const [showWelcome, setShowWelcome] = useState(true);
   const [language, setLanguage] = useState(() => {
@@ -360,7 +364,7 @@ function App() {
 
   // Main chat interface
   return (
-    <Flex h="100vh" bg={useColorModeValue('gray.50', 'gray.900')}>
+    <Flex h="100vh" bg={bgSecondary}>
       {/* Sidebar */}
       <Sidebar
         isOpen={isSidebarOpen}
@@ -376,36 +380,64 @@ function App() {
 
       {/* Main Chat Area */}
       <Flex flex="1" direction="column" overflow="hidden">
-       <ChatHeader
+        <ChatHeader
           language={language}
           onLanguageChange={handleLanguageChange}
           onToggleSidebar={toggleSidebar}
           user={user}
           onLogout={handleLogout}
-          onLogin={handleLogin}          // Thêm prop này
-          onRegister={handleRegister}    // Thêm prop này  
-          onSocialLogin={handleSocialLogin} // Thêm prop này
+          onLogin={handleLogin}
+          onRegister={handleRegister}
+          onSocialLogin={handleSocialLogin}
           currentConversation={currentConversation}
           config={chatbotConfig}
         />
-        <Box flex="1" overflow="hidden">
-          <ChatArea
-            messages={messages}
-            messagesEndRef={messagesEndRef}
-            language={language}
-            isLoading={isLoading}
-            config={chatbotConfig}
-          />
-        </Box>
-
-        <ChatInput
-          inputText={inputText}
-          setInputText={setInputText}
-          onSubmit={handleSubmit}
-          isLoading={isLoading}
-          language={language}
-          config={chatbotConfig}
-        />
+        
+        {messages.length === 0 ? (
+          // Centered layout when no messages
+          <Flex flex="1" direction="column" justify="center" align="center" px={4}>
+            <Box flex="1" w="full" display="flex" alignItems="center" justifyContent="center">
+              <ChatArea
+                messages={messages}
+                messagesEndRef={messagesEndRef}
+                language={language}
+                isLoading={isLoading}
+                config={chatbotConfig}
+              />
+            </Box>
+            <Box w="full" maxW="700px" mb={8}>
+              <ChatInput
+                inputText={inputText}
+                setInputText={setInputText}
+                onSubmit={handleSubmit}
+                isLoading={isLoading}
+                language={language}
+                config={chatbotConfig}
+              />
+            </Box>
+          </Flex>
+        ) : (
+          // Normal layout when messages exist
+          <>
+            <Box flex="1" overflow="hidden">
+              <ChatArea
+                messages={messages}
+                messagesEndRef={messagesEndRef}
+                language={language}
+                isLoading={isLoading}
+                config={chatbotConfig}
+              />
+            </Box>
+            <ChatInput
+              inputText={inputText}
+              setInputText={setInputText}
+              onSubmit={handleSubmit}
+              isLoading={isLoading}
+              language={language}
+              config={chatbotConfig}
+            />
+          </>
+        )}
       </Flex>
     </Flex>
   );

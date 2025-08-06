@@ -24,10 +24,12 @@ const ChatInput = ({
 }) => {
   const textareaRef = useRef(null);
 
-  const bgColor = useColorModeValue('#f7f7f8', '#1e1e1f');
-  const inputBg = useColorModeValue('white', 'gray.800');
-  const borderColor = useColorModeValue('gray.300', 'gray.700');
+  const bgColor = useColorModeValue('#f7f7f8');
+  const inputContainerBg = useColorModeValue('white', 'gray.800');
+  const borderColor = useColorModeValue('gray.300', 'gray.600');
   const focusBorderColor = useColorModeValue('#10a37f', '#10a37f');
+  const textColor = useColorModeValue('gray', 'gray.100');
+  const placeholderColor = useColorModeValue('gray.500', 'gray.400');
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -48,81 +50,91 @@ const ChatInput = ({
   return (
     <Flex justify="center" px={5} py={5} bg={bgColor}>
       <Box as="form" onSubmit={onSubmit} w="100%" maxW="700px">
-      <Flex
-  align="center"
-  bg="gray.300"
-  border="none"
-  borderColor={borderColor}
-  borderRadius={{base: "full", md: "3xl"}}
-  px={3}
-  py={{md: "30px", base: "10px"}}
-  _focusWithin={{
-    borderColor: focusBorderColor,
-    boxShadow: `0 0 0 1px ${focusBorderColor}`,
-  }}
->
-  <Tooltip label="Thêm tiện ích">
-    <IconButton
-      icon={<FaPlus />}
-      size="sm"
-      variant="ghost"
-      aria-label="more"
-      onClick={onExtraClick || (() => console.log("Extra clicked"))}
-      borderRadius="full"
-      mr={2}
-    />
-  </Tooltip>
+        <Flex
+          align="center"
+         
+          bg={inputContainerBg}
+          border="1px solid"
+          borderColor={borderColor}
+          borderRadius={{ base: "full", md: "3xl" }}
+          px={3}
+          py={{ md: "12px", base: "8px" }}
+          boxShadow="sm"
+          _focusWithin={{
+            borderColor: focusBorderColor,
+            boxShadow: `0 0 0 1px ${focusBorderColor}`,
+          }}
+          _hover={{
+            borderColor: focusBorderColor,
+          }}
+          transition="all 0.2s"
+        >
+          <Tooltip label="Thêm tiện ích">
+            <IconButton
+              icon={<FaPlus />}
+              size="sm"
+              variant="ghost"
+              aria-label="more"
+              onClick={onExtraClick || (() => console.log("Extra clicked"))}
+              borderRadius="full"
+              mr={2}
+              color={textColor}
+              _hover={{ bg: useColorModeValue('gray.100', 'gray.600') }}
+            />
+          </Tooltip>
 
-  <Textarea
-    ref={textareaRef}
-    placeholder={translations[language].inputPlaceholder}
-    value={inputText}
-    onChange={(e) => setInputText(e.target.value)}
-    onKeyDown={handleKeyPress}
-    disabled={isLoading}
-    resize="none"
-    minH="36px"
-    maxH="200px"
-    border="none"
-    bg="transparent"
-    boxShadow="none"
-    fontSize={{md:"15px", base: "13px"}}
-    px="10px" 
-    py=""
-    
-    _focus={{ outline: 'none', boxShadow: 'none' }}
-    _disabled={{ opacity: 0.6, cursor: 'not-allowed' }}
-    flex="1"
-  />
+          <Textarea
+            ref={textareaRef}
+            placeholder={translations[language].inputPlaceholder || "Nhập tin nhắn..."}
+            value={inputText}
+            onChange={(e) => setInputText(e.target.value)}
+            onKeyDown={handleKeyPress}
+            disabled={isLoading}
+            resize="none"
+            variant="unstyled"
+            minH="36px"
+            maxH="200px"
+            border="none"
+            bg="transparent"
+            boxShadow="none"
+            fontSize={{ md: "15px", base: "13px" }}
+            px="10px"
+            py="px"
+            color={textColor}
+            _placeholder={{ color: placeholderColor }}
+            _focus={{ outline: 'none', boxShadow: 'none' }}
+            _disabled={{ opacity: 0.6, cursor: 'not-allowed' }}
+            flex="1"
+          />
 
-  {config?.features?.voiceEnabled && (
-    <Tooltip label="Ghi âm" hasArrow>
-      <IconButton
-        icon={<Image src="/img/voice-chat.png" boxSize="24px" alt="voice" />}
-        size="sm"
-        variant="ghost"
-        aria-label="voice"
-        onClick={onVoiceClick || (() => console.log('Voice Click'))}
-        borderRadius="full"
-        mx={1}
-      />
-    </Tooltip>
-  )}
+          {config?.features?.voiceEnabled && (
+            <Tooltip label="Ghi âm" hasArrow>
+              <IconButton
+                icon={<Image src="/img/voice-chat.png" boxSize="24px" alt="voice" />}
+                size="sm"
+                variant="ghost"
+                aria-label="voice"
+                onClick={onVoiceClick || (() => console.log('Voice Click'))}
+                borderRadius="full"
+                mx={1}
+                _hover={{ bg: useColorModeValue('gray.100', 'gray.600') }}
+              />
+            </Tooltip>
+          )}
 
-  <Tooltip label={translations[language].sendMessage || 'Gửi'}>
-    <IconButton
-      icon={<FaPaperPlane />}
-      colorScheme="blue"
-      type="submit"
-      size="sm"
-      isDisabled={!canSend}
-      isLoading={isLoading}
-      borderRadius="full"
-      ml={1}
-    />
-  </Tooltip>
-</Flex>
-
+          <Tooltip label={translations[language].sendMessage || 'Gửi'}>
+            <IconButton
+              icon={<FaPaperPlane />}
+              colorScheme="blue"
+              type="submit"
+              size="sm"
+              isDisabled={!canSend}
+              isLoading={isLoading}
+              borderRadius="full"
+              ml={1}
+            />
+          </Tooltip>
+        </Flex>
       </Box>
     </Flex>
   );

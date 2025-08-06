@@ -37,6 +37,8 @@ import SocialLoginButtons from '../SocialLogin/SocialLoginButtons';
 import environment from '../../config/environment';
 import oauthService from '../../services/oauthService';
 import AuthModal from '../Auth/AuthModal';
+import ThemeToggle from '../ThemeToggle/ThemeToggle';
+import { useTheme } from '../../contexts/ThemeContext';
 
 // Form validation
 const validateForm = (formData, authMode, language) => {
@@ -418,6 +420,18 @@ const WelcomeScreen = ({
         <VStack spacing={8} animation={`${slideUp} 0.8s ease-out`}>
           {/* Top Navigation */}
           <HStack position="absolute" top={4} right={4} spacing={2}>
+            <ThemeToggle 
+              size="sm"
+              bg="blackAlpha.500"
+              color="white"
+              _hover={{
+                bg: 'whiteAlpha.200',
+                transform: 'translateY(-1px)'
+              }}
+              _active={{ transform: 'translateY(0)' }}
+              transition="all 0.2s"
+            />
+            
             <Button
               leftIcon={<FaLanguage />}
               onClick={onLanguageChange}
@@ -607,11 +621,11 @@ const WelcomeScreen = ({
                {translations[language]?.loginPrompt || "Sign in to save your chat history and get personalized recommendations!"}
                <Button
                  variant="link"
-                 color="blue.300"
+                 color="blue"
                  fontSize="sm"
                  ml={2}
                  onClick={onOpen}
-                 _hover={{ color: 'blue.100', textDecoration: 'underline' }}
+                 _hover={{ color: 'blue.50', textDecoration: 'underline' }}
                  fontWeight="medium"
                >
                  {translations[language]?.loginNow || "Sign in now"}
@@ -668,6 +682,7 @@ const WelcomeScreen = ({
                    onFacebookSuccess={handleFacebookSuccess}
                    onError={handleSocialLoginError}
                    language={language}
+                   onLanguageChange={onLanguageChange}
                    isLoading={isLoading}
                    disabled={isLoading}
                  />
