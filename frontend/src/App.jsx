@@ -247,19 +247,19 @@ function App() {
           config={chatbotConfig}
         />
         
-        {messages.length === 0 ? (
-          // Centered layout when no messages
-          <Flex flex="1" direction="column" justify="center" align="center" px={4}>
-            <Box flex="1" w="full" display="flex" alignItems="center" justifyContent="center">
-              <ChatArea
-                messages={messages}
-                messagesEndRef={messagesEndRef}
-                language={language}
-                isLoading={isLoading}
-                config={chatbotConfig}
-              />
-            </Box>
-            <Box w="full" maxW="700px" mb={8}>
+        {/* Unified layout for both empty and message states - always scrollable */}
+        <Flex flex="1" direction="column" overflow="hidden">
+          <Box flex="1" overflow="hidden">
+            <ChatArea
+              messages={messages}
+              messagesEndRef={messagesEndRef}
+              language={language}
+              isLoading={isLoading}
+              config={chatbotConfig}
+            />
+          </Box>
+          <Box w="full" px={4} pb={4}>
+            <Box maxW="700px" mx="auto">
               <ChatInput
                 inputText={inputText}
                 setInputText={setInputText}
@@ -270,30 +270,8 @@ function App() {
                 onVoiceClick={handleVoiceClick}
               />
             </Box>
-          </Flex>
-        ) : (
-          // Normal layout when messages exist
-          <>
-            <Box flex="1" overflow="hidden">
-              <ChatArea
-                messages={messages}
-                messagesEndRef={messagesEndRef}
-                language={language}
-                isLoading={isLoading}
-                config={chatbotConfig}
-              />
-            </Box>
-            <ChatInput
-              inputText={inputText}
-              setInputText={setInputText}
-              onSubmit={handleSubmit}
-              isLoading={isLoading}
-              language={language}
-              config={chatbotConfig}
-              onVoiceClick={handleVoiceClick}
-            />
-          </>
-        )}
+          </Box>
+        </Flex>
       </Flex>
 
       {/* Voice Interface Modal */}

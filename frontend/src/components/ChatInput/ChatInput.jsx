@@ -23,14 +23,25 @@ const ChatInput = ({
   onVoiceClick,
   onExtraClick
 }) => {
-  const textareaRef = useRef(null);
+ const inputRef = useRef(null);
+ const textareaRef = useRef(null);
+
+
 
   const bgColor = useColorModeValue('#f7f7f8');
   const inputContainerBg = useColorModeValue('white', 'gray.800');
   const borderColor = useColorModeValue('gray.300', 'gray.600');
   const focusBorderColor = useColorModeValue('#10a37f', '#10a37f');
-  const textColor = useColorModeValue('gray', 'gray.100');
+  const textColor = useColorModeValue('black', 'white');
   const placeholderColor = useColorModeValue('gray.500', 'gray.400');
+
+   // Tự động focus khi component mount hoặc gửi xong tin nhắn
+  useEffect(() => {
+  if (!isLoading) {
+    textareaRef.current?.focus();
+  }
+}, [isLoading]);
+
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -38,6 +49,19 @@ const ChatInput = ({
       textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 200)}px`;
     }
   }, [inputText]);
+
+    const handleSendMessage = () => {
+        if (!inputText.trim()) return;
+        
+        onSubmit(); // hoặc tùy logic gửi
+        setInputText('');
+
+        setTimeout(() => {
+          inputRef.current?.focus();
+        }, 0);
+      };
+
+
 
   const handleKeyPress = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -49,7 +73,7 @@ const ChatInput = ({
   const canSend = inputText.trim() && !isLoading;
 
   return (
-    <Flex justify="center" px={5} py={5} bg={bgColor}>
+    <Flex justify="center" px={0} py={5} bg={bgColor}>
       <Box as="form" onSubmit={onSubmit} w="100%" maxW="700px">
         <Flex
           align="center"
@@ -57,9 +81,9 @@ const ChatInput = ({
           bg={inputContainerBg}
           border="1px solid"
           borderColor={borderColor}
-          borderRadius={{ base: "full", md: "3xl" }}
+          borderRadius={{ base: "3xl", md: "3xl" }}
           px={3}
-          py={{ md: "12px", base: "8px" }}
+          py={{ md: "15px", base: "5px" }}
           boxShadow="sm"
           _focusWithin={{
             borderColor: focusBorderColor,
@@ -84,29 +108,32 @@ const ChatInput = ({
             />
           </Tooltip>
 
-          <Textarea
-            ref={textareaRef}
-            placeholder={translations[language].inputPlaceholder || "Nhập tin nhắn..."}
-            value={inputText}
-            onChange={(e) => setInputText(e.target.value)}
-            onKeyDown={handleKeyPress}
-            disabled={isLoading}
-            resize="none"
-            variant="unstyled"
-            minH="36px"
-            maxH="200px"
-            border="none"
-            bg="transparent"
-            boxShadow="none"
-            fontSize={{ md: "15px", base: "13px" }}
-            px="10px"
-            py="px"
-            color={textColor}
-            _placeholder={{ color: placeholderColor }}
-            _focus={{ outline: 'none', boxShadow: 'none' }}
-            _disabled={{ opacity: 0.6, cursor: 'not-allowed' }}
-            flex="1"
-          />
+         <Textarea
+              ref={textareaRef}
+            
+              placeholder={translations[language].inputPlaceholder}
+              value={inputText}
+              onChange={(e) => setInputText(e.target.value)}
+              onKeyDown={handleKeyPress}
+              disabled={isLoading}
+              resize="none"
+              rows={1}
+              variant="unstyled"
+              minH="36px"
+              maxH="200px"
+              border="none"
+              bg="transparent"
+              boxShadow="none"
+              fontSize={{ md: "15px", base: "15px" }}
+              px="10px"
+              py="10px" //căn padding giữa
+              color={textColor}
+              _placeholder={{ color: placeholderColor }}
+              _focus={{ outline: 'none', boxShadow: 'none' }}
+              _disabled={{ opacity: 0.6, cursor: 'text' }}
+              flex="1"
+            />
+
 
           {config?.features?.voiceEnabled && (
             <Tooltip label={translations[language].voiceAssistant}>

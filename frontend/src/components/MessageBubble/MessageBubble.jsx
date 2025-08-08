@@ -9,11 +9,9 @@ import {
   Spinner,
   useColorModeValue,
   Code,
-  Divider,
+  Textarea,
 } from '@chakra-ui/react';
 import {
-  FaPause,
-  FaVolumeUp,
   FaCopy,
   FaThumbsUp,
   FaThumbsDown,
@@ -27,18 +25,16 @@ const MessageBubble = ({ message, language, config }) => {
   const [isCopied, setIsCopied] = useState(false);
   const isUser = message.sender === 'user';
   
-  const bgColor = useColorModeValue(
-    isUser ? 'blue.500' : message.isError ? 'red.50' : 'white',
-    isUser ? 'blue.600' : message.isError ? 'red.900' : 'gray.800'
-  );
+  // User message colors (keep original bubble design)
+  const userBgColor = useColorModeValue('blue.500', 'blue.600');
+  const userTextColor = 'white';
   
-  const textColor = useColorModeValue(
-    isUser ? 'white' : message.isError ? 'red.600' : 'gray.800',
-    isUser ? 'white' : message.isError ? 'red.200' : 'white'
-  );
+  // Bot message colors (textarea-like design)
+  const botBgColor = useColorModeValue('');
+  const botTextColor = useColorModeValue('gray.800', 'gray.100');
+  const botBorderColor = useColorModeValue('gray.200', 'gray.600');
+  const botHoverBorderColor = useColorModeValue('gray.300', 'gray.500');
   
-  const borderColor = useColorModeValue('gray.200', 'gray.700');
-
   const handleCopy = async () => {
    try {
      await navigator.clipboard.writeText(message.text);
@@ -62,7 +58,7 @@ const MessageBubble = ({ message, language, config }) => {
              whiteSpace="pre-wrap"
              p={3}
              my={2}
-             bg="gray.100"
+             bg={useColorModeValue('gray.100', 'gray.700')}
              borderRadius="md"
              fontSize="sm"
            >
@@ -73,89 +69,142 @@ const MessageBubble = ({ message, language, config }) => {
        return <Text key={index}>{part}</Text>;
      });
    }
-   return <Text>{text}</Text>;
+   return text;
  };
 
- return (
-   <HStack
-     align="start"
-     justify={isUser ? 'flex-end' : 'flex-start'}
-     spacing={3}
-     w="full"
-   >
-     {!isUser && (
-       <Avatar
-         size="sm"
-         bg="blue.500"
-         icon={<FaRobot color="white" />}
-       />
-     )}
-     
-     <VStack align={isUser ? 'flex-end' : 'flex-start'} spacing={2} maxW="70%">
-       <Box
-         bg={bgColor}
-         color={textColor}
-         px={4}
-         py={3}
-         borderRadius="lg"
-         borderBottomRightRadius={isUser ? 'sm' : 'lg'}
-         borderBottomLeftRadius={isUser ? 'lg' : 'sm'}
-         boxShadow="sm"
-         border={!isUser ? '1px solid' : 'none'}
-         borderColor={borderColor}
-         position="relative"
-         minW="100px"
-       >
-         {message.isLoading ? (
-           <HStack spacing={2} align="center">
-             <Spinner size="sm" color="blue.500" />
-             <Text fontSize="sm">{message.text}</Text>
-           </HStack>
-         ) : (
-           <Box fontSize="sm" lineHeight="1.6">
+ // Render user message with original bubble design
+ if (isUser) {
+   return (
+     <HStack
+       align="start"
+       justify="flex-end"
+       spacing={3}
+       w="full"
+       mb={4}
+     >
+       <VStack align="flex-end" spacing={2} maxW="70%">
+         <Box
+           bg={userBgColor}
+           color={userTextColor}
+           px={4}
+           py={3}
+           borderRadius="lg"
+           borderBottomRightRadius="sm"
+           boxShadow="sm"
+           position="relative"
+           minW="100px"
+         >
+           <Box fontSize="md" lineHeight="1.6">
              {formatMessageText(message.text)}
            </Box>
+         </Box>
+       </VStack>
+
+      
+     </HStack>
+   );
+ }
+
+ // Render bot message with Claude-like textarea design
+ return (
+   <VStack spacing={3} w="full" align="stretch" mb={5}>
+     <HStack align="start" spacing={3} w="full">
+    
+       
+       <VStack align="stretch" spacing={2} flex="1" maxW="calc(100% - 60px)">
+         {message.isLoading ? (
+           <Box
+             bg={botBgColor}
+             border="none"
+             borderColor={botBorderColor}
+             borderRadius="md"
+             p={4}
+             minH="100px"
+           >
+             <HStack spacing={2} align="center">
+               <Spinner size="sm" color="blue.500" />
+               <Text fontSize="sm" color={botTextColor}>{message.text}</Text>
+             </HStack>
+           </Box>
+         ) : (
+           <Box
+             bg={botBgColor}
+             border="none"
+             borderColor={botBorderColor}
+             borderRadius="xl"
+             p={0}
+            
+             position="relative"
+             _hover={{
+               borderColor: botHoverBorderColor
+             }}
+             transition="border-color 0.2s"
+             overflow="hidden"
+           >
+             {message.text.includes('```') ? (
+               <Box fontSize="sm" lineHeight="1.6" color={botTextColor} p={4}>
+                 {formatMessageText(message.text)}
+               </Box>
+             ) : (
+               <Text
+                  whiteSpace="pre-wrap"
+                  color={botTextColor}
+                  fontSize="md"
+                  lineHeight="1.6"
+                  fontFamily="inherit"
+                  px={4}
+                  py={3}
+                >
+                  {message.text}
+                </Text>
+
+             )}
+           </Box>
          )}
-       </Box>
 
-       {/* Message Actions */}
-       {!message.isLoading && !isUser && (
-         <HStack spacing={1} opacity={0.7} _hover={{ opacity: 1 }}>
-           <IconButton
-             icon={isCopied ? <FaThumbsUp /> : <FaCopy />}
-             size="xs"
-             variant="ghost"
-             onClick={handleCopy}
-             aria-label={translations[language].copyMessage || 'Copy message'}
-             title={isCopied ? 'Copied!' : 'Copy'}
-           />
-           
-           
-           <IconButton
-             icon={<FaThumbsUp />}
-             size="xs"
-             variant="ghost"
-             aria-label="Like"
-           />
-           
-           <IconButton
-             icon={<FaThumbsDown />}
-             size="xs"
-             variant="ghost"
-             aria-label="Dislike"
-           />
-         </HStack>
-       )}
-     </VStack>
-
-     {isUser && (
-       <Avatar
-         size="sm"
-         bg="gray.500"
-         icon={<FaUser color="white" />}
-       />
-     )}
-   </HStack>
+         {/* Message Actions */}
+         {!message.isLoading && (
+           <HStack spacing={1} justify="flex" opacity={1} _hover={{ opacity: 5 }}>
+             <IconButton
+               icon={isCopied ? <FaThumbsUp /> : <FaCopy />}
+               ml="10px"
+               size="xs"
+               variant="ghost"
+               onClick={handleCopy}
+               aria-label={translations[language]?.copyMessage || 'Copy message'}
+               title={isCopied ? 'Copied!' : 'Copy'}
+               color={botTextColor}
+               _hover={{
+                 bg: useColorModeValue('gray.100', 'gray.700')
+               }}
+             />
+             
+             <IconButton
+               icon={<FaThumbsUp />}
+               size="xs"
+               variant="ghost"
+               aria-label="Like"
+               color={botTextColor}
+               _hover={{
+                 bg: useColorModeValue('gray.100', 'gray.700')
+               }}
+             />
+             
+             <IconButton
+               icon={<FaThumbsDown />}
+               size="xs"
+               variant="ghost"
+               aria-label="Dislike"
+               color={botTextColor}
+               _hover={{
+                 bg: useColorModeValue('gray.100', 'gray.700')
+               }}
+             />
+           </HStack>
+         )}
+       </VStack>
+     </HStack>
+   </VStack>
  );
 };
 

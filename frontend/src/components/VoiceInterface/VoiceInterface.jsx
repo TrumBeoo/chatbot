@@ -14,7 +14,7 @@ import {
 } from '@chakra-ui/react';
 import { FaMicrophone, FaStop, FaTimes, FaPause, FaPlay } from 'react-icons/fa';
 import Lottie from 'lottie-react';
-import voiceAssistantAnimation from '../../animations/VoiceAssistant .json';
+import voiceAssistantAnimation from '../../animations/VoiceAssistant.json';
 import { voiceWave } from '../../styles/animations';
 
 const VoiceInterface = ({ 

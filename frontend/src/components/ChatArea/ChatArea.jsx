@@ -10,7 +10,7 @@ import {
 import MessageBubble from '../MessageBubble/MessageBubble';
 import EmptyState from './EmptyState';
 import { translations } from '../../constants';
-
+    
 const ChatArea = ({
   messages,
   messagesEndRef,
@@ -26,40 +26,53 @@ const ChatArea = ({
       overflowY="auto"
       bg={bgColor}
       position="relative"
+      height="100%"
+      minHeight="0"
     >
       {messages.length === 0 ? (
-        <EmptyState language={language} config={config} />
-      ) : (
-        <VStack
-          spacing={6}
-          align="stretch"
-          py={6}
-          px={4}
-          maxW="4xl"
-          mx="auto"
+        <Box 
+          height="100%" 
+          overflowY="auto"
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
         >
-          {messages.map((message, idx) => (
-            <MessageBubble
-              key={message.id || idx}
-              message={message}
-              language={language}
-              config={config}
-            />
-          ))}
-          
-          {isLoading && (
-            <Center py={4}>
-              <VStack spacing={2}>
-                <Spinner color="blue.500" />
-                <Text fontSize="sm" color="gray.500">
-                  {translations[language].thinking}
-                </Text>
-              </VStack>
-            </Center>
-          )}
-          
-          <div ref={messagesEndRef} />
-        </VStack>
+          <EmptyState language={language} config={config} />
+        </Box>
+      ) : (
+        <Box height="100%" overflowY="auto">
+          <VStack
+            spacing={6}
+            align="stretch"
+            py={6}
+            px={4}
+            maxW="4xl"
+            mx="auto"
+            minHeight="100%"
+          >
+            {messages.map((message, idx) => (
+              <MessageBubble
+                key={message.id || idx}
+                message={message}
+                language={language}
+                config={config}
+              />
+            ))}
+            
+            {isLoading && (
+              <Center py={4}>
+                <VStack spacing={2}>
+                  <Spinner color="blue.500" />
+                  <Text fontSize="sm" color="gray.500">
+                    {translations[language].thinking}
+                  </Text>
+                </VStack>
+              </Center>
+            )}
+            
+            <div ref={messagesEndRef} />
+          </VStack>
+        </Box>
       )}
     </Box>
   );

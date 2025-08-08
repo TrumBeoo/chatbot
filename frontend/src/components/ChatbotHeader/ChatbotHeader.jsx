@@ -106,6 +106,7 @@ const ChatHeader = ({
               onClick={onLanguageChange}
               variant="ghost"
               size="sm"
+            
             >
               {translations[language].languageSwitch}
             </Button>

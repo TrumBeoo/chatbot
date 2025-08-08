@@ -15,7 +15,7 @@ import tempfile
 
    
 GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
-GROQ_API_KEY = "your_api_key"  # Thay bằng key thật
+GROQ_API_KEY = "your_api_key"  # Thay bằng key thật 
 headers = {
     "Authorization": f"Bearer {GROQ_API_KEY}",   # Thay bằng key thật
     "Content-Type": "application/json"

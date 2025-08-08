@@ -19,9 +19,10 @@ const EmptyState = ({ language, config }) => {
       spacing={8}
       justify="center"
       align="center"
-      h="full"
+      minH="400px"
       px={6}
       py={12}
+      w="full"
     >
       {/* Bot Avatar */}
       <VStack spacing={4}>

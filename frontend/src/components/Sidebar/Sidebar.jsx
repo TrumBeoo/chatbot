@@ -48,7 +48,7 @@ const Sidebar = ({
   const borderColor = useColorModeValue('gray.200', 'gray.700');
 
   return (
-    <Drawer isOpen={isOpen} placement="left" onClose={onClose} size="sm">
+    <Drawer isOpen={isOpen} placement="left" onClose={onClose} size="xs">
       <DrawerOverlay />
       <DrawerContent bg={bgColor}>
         <DrawerCloseButton />

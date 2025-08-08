@@ -1,4 +1,4 @@
-@echo off
+    @echo off
 echo Starting Chatbot Application...
 echo.
 
@@ -16,7 +16,7 @@ start "Frontend Server" cmd /k "npm run dev"
 echo.
 echo Both servers are starting...
 echo Backend: http://localhost:5000
-echo Frontend: http://localhost:5173 (or check the frontend terminal for the actual port)
+echo Frontend: http://localhost:3000 (or check the frontend terminal for the actual port)
 echo.
 echo Press any key to exit...
 pause > nul
