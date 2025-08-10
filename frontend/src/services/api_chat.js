@@ -1,4 +1,4 @@
-// src/services/api.js
+// src/services/api_chat.js
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5000';
 
 class ApiService {
@@ -6,16 +6,33 @@ class ApiService {
     this.baseURL = API_BASE_URL;
   }
 
-  async sendMessage(message) {
+  // Get authorization headers
+  getAuthHeaders() {
+    const token = localStorage.getItem('token');
+    return {
+      'Content-Type': 'application/json',
+      ...(token && { 'Authorization': `Bearer ${token}` })
+    };
+  }
+
+  // Check if user is authenticated
+  isAuthenticated() {
+    return !!localStorage.getItem('token');
+  }
+
+  async sendMessage(message, language = null, conversationId = null) {
     try {
-      const response = await fetch(`${this.baseURL}/chat`, {
+      const isAuth = this.isAuthenticated();
+      const endpoint = isAuth ? '/chat-authenticated' : '/chat';
+      
+      const requestBody = { message };
+      if (language) requestBody.language = language;
+      if (conversationId && isAuth) requestBody.conversation_id = conversationId;
+
+      const response = await fetch(`${this.baseURL}${endpoint}`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          message: message
-        })
+        headers: isAuth ? this.getAuthHeaders() : { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody)
       });
 
       if (!response.ok) {
@@ -27,7 +44,8 @@ class ApiService {
       if (data.status === 'success') {
         return {
           success: true,
-          message: data.response
+          message: data.response,
+          language: data.language
         };
       } else {
         throw new Error(data.message || 'Unknown error occurred');

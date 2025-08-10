@@ -190,11 +190,32 @@ function App() {
     setIsVoiceOpen(false);
   }, []);
 
-  const handleVoiceResult = useCallback((transcript) => {
-    if (transcript.trim()) {
-      setInputText(transcript);
-      // Optionally auto-send the voice message
-      handleSend(transcript);
+  const handleVoiceResult = useCallback((userText, botText) => {
+    const u = (userText || '').trim();
+    if (!u) return;
+    // Add user message
+    const userMessage = {
+      id: `user-${Date.now()}`,
+      text: u,
+      sender: 'user',
+      timestamp: new Date().toISOString()
+    };
+    setMessages(prev => [...prev, userMessage]);
+    setInputText('');
+
+    // If we already have bot text from voice endpoint, add it directly
+    const bot = (botText || '').trim();
+    if (bot) {
+      const botMessage = {
+        id: `bot-${Date.now()}`,
+        text: bot,
+        sender: 'bot',
+        timestamp: new Date().toISOString()
+      };
+      setMessages(prev => [...prev, botMessage]);
+    } else {
+      // Fallback: call text chat endpoint
+      handleSend(u);
     }
   }, [handleSend]);
 
