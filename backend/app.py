@@ -5,11 +5,14 @@ import base64
 import os
 
 from noi import detect_language, get_ai_response, synthesize_speech_to_bytes
+from RAG.simple_rag import rag_system
 from auth import auth_bp, token_required
 from chat_history import chat_bp
 from db import chat_collection
 from bson import ObjectId
 from datetime import datetime
+import pytz
+
 
 load_dotenv()
 
@@ -24,12 +27,35 @@ app.register_blueprint(auth_bp, url_prefix='/api/auth')
 app.register_blueprint(chat_bp, url_prefix='/api/chat')
 
 
+
+
 @app.route('/health', methods=['GET'])
 def health():
     return jsonify({
         'status': 'healthy',
         'message': 'Chat and Voice API running'
     })
+
+def get_current_datetime():
+    """Helper function to get current datetime info"""
+    vn_tz = pytz.timezone('Asia/Ho_Chi_Minh')
+    now = datetime.now(vn_tz)
+    return {
+        'datetime': now.strftime('%d/%m/%Y %H:%M:%S'),
+        'date': now.strftime('%d/%m/%Y'),
+        'time': now.strftime('%H:%M:%S'),
+        'day': now.day,
+        'month': now.month,
+        'year': now.year
+    }
+
+@app.route('/datetime', methods=['GET'])
+def get_datetime():
+    return jsonify({
+        'status': 'success',
+        **get_current_datetime()
+    })
+
 
 
 @app.route('/chat', methods=['POST'])
@@ -39,14 +65,22 @@ def chat():
         data = request.get_json(force=True)
         message = (data or {}).get('message', '').strip()
         lang = (data or {}).get('language')
-        
+       
+      
         if not message:
             return jsonify({'status': 'error', 'message': 'Missing message'}), 400
         
         if not lang:
             lang = detect_language(message)
         
-        response_text = get_ai_response(message, lang)
+        # Check if user is asking about time/date
+        time_keywords = ['giờ', 'ngày', 'tháng', 'năm', 'time', 'date', 'today', 'now', 'hôm nay', 'bây giờ']
+        if any(keyword in message.lower() for keyword in time_keywords):
+            datetime_info = get_current_datetime()
+            response_text = get_ai_response(f"{message}. Hiện tại là {datetime_info['datetime']}", lang)
+        else:
+            # Use RAG for tourism-related queries
+            response_text = rag_system.get_rag_response(message)
         
         return jsonify({
             'status': 'success', 
@@ -73,8 +107,8 @@ def chat_authenticated(current_user_id):
         if not lang:
             lang = detect_language(message)
         
-        # Get AI response
-        response_text = get_ai_response(message, lang)
+        # Get AI response using RAG
+        response_text = rag_system.get_rag_response(message)
         
         # Save to chat history if conversation_id is provided
         if conversation_id:
@@ -132,28 +166,37 @@ def voice_chat():
     try:
         data = request.get_json(force=True)
         text = (data or {}).get('text', '').strip()
-        lang = (data or {}).get('language')
+        lang = (data or {}).get('language')  # Optional language hint from frontend
+      
+       
         
         if not text:
             return jsonify({'status': 'error', 'message': 'Missing text'}), 400
         
-        if not lang:
-            lang = detect_language(text)
+        # Always detect language from the actual text
+        detected_lang = detect_language(text)
+        print(f"Voice Chat - Input: '{text}' | Detected: {detected_lang} | Hint: {lang}")
         
-        # Get AI response
-        response_text = get_ai_response(text, lang)
+        # Check if user is asking about time/date
+        time_keywords = ['giờ', 'ngày', 'tháng', 'năm', 'time', 'date', 'today', 'now', 'hôm nay', 'bây giờ']
+        if any(keyword in text.lower() for keyword in time_keywords):
+            datetime_info = get_current_datetime()
+            response_text = get_ai_response(f"{text}. Hiện tại là {datetime_info['datetime']}", detected_lang)
+        else:
+            response_text = rag_system.get_rag_response(text)
         
-        # TTS synthesize
-        audio_bytes = synthesize_speech_to_bytes(response_text, lang)
+        # Generate audio in the same language as the response
+        audio_bytes = synthesize_speech_to_bytes(response_text, detected_lang)
         audio_b64 = base64.b64encode(audio_bytes).decode('utf-8') if audio_bytes else ''
         
         return jsonify({
             'status': 'success',
             'response': response_text,
-            'language': lang,
+            'language': detected_lang,  # Return the actually detected language
             'audio': audio_b64
         })
     except Exception as e:
+        print(f"Voice chat error: {str(e)}")
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
 
@@ -164,34 +207,33 @@ def voice_chat_authenticated(current_user_id):
     try:
         data = request.get_json(force=True)
         text = (data or {}).get('text', '').strip()
-        lang = (data or {}).get('language')
+        lang = (data or {}).get('language')  # Optional language hint from frontend
         conversation_id = (data or {}).get('conversation_id')
         
         if not text:
             return jsonify({'status': 'error', 'message': 'Missing text'}), 400
         
-        if not lang:
-            lang = detect_language(text)
+        # Always detect language from the actual text
+        detected_lang = detect_language(text)
+        print(f"Authenticated Voice Chat - Input: '{text}' | Detected: {detected_lang} | Hint: {lang}")
         
-        # Get AI response
-        response_text = get_ai_response(text, lang)
+        # Get AI response using RAG
+        response_text = rag_system.get_rag_response(text)
         
-        # TTS synthesize
-        audio_bytes = synthesize_speech_to_bytes(response_text, lang)
+        # Generate audio in the same language as the response
+        audio_bytes = synthesize_speech_to_bytes(response_text, detected_lang)
         audio_b64 = base64.b64encode(audio_bytes).decode('utf-8') if audio_bytes else ''
         
         # Save to chat history if conversation_id is provided
         if conversation_id:
             try:
                 if ObjectId.is_valid(conversation_id):
-                    # Check if conversation exists and belongs to user
                     conversation = chat_collection.find_one({
                         '_id': ObjectId(conversation_id),
                         'user_id': ObjectId(current_user_id)
                     })
                     
                     if conversation:
-                        # Add messages to existing conversation
                         timestamp = datetime.utcnow()
                         
                         user_msg = {
@@ -199,7 +241,7 @@ def voice_chat_authenticated(current_user_id):
                             'text': text,
                             'sender': 'user',
                             'timestamp': timestamp,
-                            'language': lang
+                            'language': detected_lang
                         }
                         
                         bot_msg = {
@@ -207,7 +249,7 @@ def voice_chat_authenticated(current_user_id):
                             'text': response_text,
                             'sender': 'bot',
                             'timestamp': timestamp,
-                            'language': lang
+                            'language': detected_lang
                         }
                         
                         chat_collection.update_one(
@@ -219,17 +261,16 @@ def voice_chat_authenticated(current_user_id):
                         )
             except Exception as e:
                 print(f"Error saving to chat history: {str(e)}")
-                # Continue even if saving fails
         
         return jsonify({
             'status': 'success',
             'response': response_text,
-            'language': lang,
+            'language': detected_lang,  # Return the actually detected language
             'audio': audio_b64
         })
     except Exception as e:
+        print(f"Authenticated voice chat error: {str(e)}")
         return jsonify({'status': 'error', 'message': str(e)}), 500
-
 
 if __name__ == '__main__':
     print('🚀 Chat API is ready on http://0.0.0.0:5000')

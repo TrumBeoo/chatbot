@@ -5,6 +5,9 @@ import base64
 import requests
 import edge_tts
 from langdetect import detect
+import pytz
+from datetime import datetime
+from flask import jsonify
 
 # API configuration
 GROQ_API_URL = "https://api.groq.com/openai/v1/chat/completions"
@@ -23,13 +26,38 @@ EDGE_VOICES = {
 def detect_language(text: str) -> str:
     """Detect language for given text, fallback to vi/en heuristic."""
     try:
-        lang = detect(text)
-        return 'vi' if lang == 'vi' else 'en'
-    except Exception:
-        vietnamese_chars = 'àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ'
-        if any(char in text.lower() for char in vietnamese_chars):
+        detected = detect(text)
+        # Map common language codes to supported ones
+        if detected in ['vi', 'vietnamese']:
             return 'vi'
-        return 'en'
+        elif detected in ['en', 'english']:
+            return 'en'
+        else:
+            # Fallback to character-based detection
+            vietnamese_chars = 'àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ'
+            if any(char in text.lower() for char in vietnamese_chars):
+                return 'vi'
+            return 'en'
+    except Exception:
+        # Enhanced fallback detection
+        text_lower = text.lower()
+        vietnamese_chars = 'àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ'
+        vietnamese_words = ['tôi', 'bạn', 'chúng', 'của', 'trong', 'một', 'có', 'được', 'này', 'đó']
+        english_words = ['the', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with']
+        
+        # Check Vietnamese characters
+        if any(char in text_lower for char in vietnamese_chars):
+            return 'vi'
+        
+        # Check Vietnamese words
+        if any(word in text_lower for word in vietnamese_words):
+            return 'vi'
+            
+        # Check English words
+        if any(word in text_lower for word in english_words):
+            return 'en'
+            
+        return 'vi'  # Default to Vietnamese
 
 
 def get_ai_response(user_input: str, detected_lang: str) -> str:
@@ -37,17 +65,35 @@ def get_ai_response(user_input: str, detected_lang: str) -> str:
     try:
         if detected_lang == 'vi':
             system_prompt = (
-                """Bạn là một trợ lý du lịch thông minh. Khi được hỏi bằng tiếng Việt, bạn sẽ trả lời bằng tiếng Việt. 
-        Bạn chỉ trả lời các câu hỏi liên quan đến du lịch như: địa điểm, lịch trình, khách sạn, ẩm thực, văn hóa, giao thông, 
-        thời tiết, chi phí du lịch, v.v. Phạm vi trả lời của bạn chỉ giới hạn trong tỉnh Quảng Ninh. 
-        Nếu câu hỏi không liên quan đến du lịch hoặc nằm ngoài tỉnh Quảng Ninh, hãy lịch sự từ chối và gợi ý người dùng hỏi về du lịch tại Quảng Ninh."""
+                """Bạn là một trợ lý du lịch thông minh của tỉnh Quảng Ninh, Việt Nam. Bạn tên là QBot.
+                Khi được hỏi bằng tiếng Việt, bạn phải trả lời bằng tiếng Việt. 
+                Bạn chỉ trả lời các câu hỏi liên quan đến du lịch như: địa điểm tham quan, lịch trình, 
+                khách sạn, nhà hàng, ẩm thực địa phương, văn hóa, lịch sử, giao thông, thời tiết, 
+                chi phí du lịch, hoạt động giải trí, v.v. 
+                
+                Phạm vi trả lời của bạn CHỈ giới hạn trong các địa phương và các địa điểm du lịch tỉnh Quảng Ninh (bao gồm Hạ Long, Cẩm Phả, 
+                Móng Cái, Đông Triều, Quảng Yên, v.v.). 
+                
+                Nếu câu hỏi không liên quan đến du lịch hoặc nằm ngoài tỉnh Quảng Ninh, hãy lịch sự 
+                từ chối và gợi ý người dùng hỏi về du lịch tại Quảng Ninh.
+                
+                Hãy trả lời một cách thân thiện, nhiệt tình và cung cấp thông tin hữu ích."""
             )
         else:
             system_prompt = (
-                """You are a smart travel assistant. When asked in English, you will respond in English. 
-        You only answer questions related to travel such as: destinations, itineraries, hotels, food, culture, transportation, 
-        weather, travel costs, etc. Your answers are strictly limited to the Quang Ninh province. 
-        If the question is not travel-related or is outside Quang Ninh, politely decline and suggest asking about travel in Quang Ninh."""
+                """You are a smart travel assistant specializing in Quang Ninh Province, Vietnam. Your name is QBot.
+                When asked in English, you MUST respond in English. 
+                You only answer questions related to travel such as: tourist destinations, itineraries, 
+                hotels, restaurants, local cuisine, culture, history, transportation, weather, 
+                travel costs, entertainment activities, etc. 
+                
+                Your answers are STRICTLY limited to Quang Ninh Province (including Ha Long, Cam Pha, 
+                Mong Cai, Dong Trieu, Quang Yen, etc.). 
+                
+                If the question is not travel-related or is outside Quang Ninh Province, politely 
+                decline and suggest asking about travel in Quang Ninh.
+                
+                Please respond in a friendly, enthusiastic manner and provide useful information."""
             )
 
         data = {
@@ -57,32 +103,43 @@ def get_ai_response(user_input: str, detected_lang: str) -> str:
                 {"role": "user", "content": user_input}
             ],
             "temperature": 0.7,
-            "max_tokens": 300
+            "max_tokens": 400  # Increased for better responses
         }
 
         response = requests.post(GROQ_API_URL, headers=headers, json=data, timeout=60)
         if response.status_code == 200:
             content = response.json()["choices"][0]["message"]["content"]
-            content = content.replace('*', '')
+            content = content.replace('*', '').strip()
+            
+            # Ensure proper sentence ending
             if content and content[-1] not in ['.', '!', '?']:
                 content += '.'
+                
             return content
         else:
-            return (
-                "Xin lỗi, tôi đang gặp sự cố. Vui lòng thử lại sau!" if detected_lang == 'vi' 
-                else "Sorry, I'm having issues. Please try again later!"
+            error_msg = (
+                "Xin lỗi, tôi đang gặp sự cố kỹ thuật. Vui lòng thử lại sau!" 
+                if detected_lang == 'vi' 
+                else "Sorry, I'm experiencing technical issues. Please try again later!"
             )
+            return error_msg
+            
     except Exception as e:
-        print(f"Lỗi API: {e}")
-        return (
-            "Tôi đang bận, vui lòng thử lại sau!" if detected_lang == 'vi' 
-            else "I'm busy, please try again later!"
+        print(f"API Error: {e}")
+        error_msg = (
+            "Tôi đang bận, vui lòng thử lại sau!" 
+            if detected_lang == 'vi' 
+            else "I'm busy right now, please try again later!"
         )
+        return error_msg
 
 
 def synthesize_speech_to_bytes(text: str, lang: str = 'vi') -> bytes:
     """Synthesize speech with Edge TTS and return MP3 bytes."""
+    # Ensure we use the correct voice for the detected language
     voice = EDGE_VOICES.get(lang, EDGE_VOICES['vi'])
+    
+    print(f"TTS: Using voice '{voice}' for language '{lang}'")
 
     async def _run() -> bytes:
         with tempfile.NamedTemporaryFile(suffix='.mp3', delete=False) as tmp:
@@ -93,6 +150,9 @@ def synthesize_speech_to_bytes(text: str, lang: str = 'vi') -> bytes:
             with open(tmp_path, 'rb') as f:
                 data = f.read()
             return data
+        except Exception as e:
+            print(f"TTS Error: {e}")
+            return b''  # Return empty bytes on error
         finally:
             try:
                 os.remove(tmp_path)
@@ -104,7 +164,6 @@ def synthesize_speech_to_bytes(text: str, lang: str = 'vi') -> bytes:
 
 
 if __name__ == '__main__':
-    # Module test: simple prompt/response loop without audio I/O
     print("🚀 Chatbot du lịch đã sẵn sàng (chế độ dòng lệnh)! Gõ 'exit' để thoát.")
     while True:
         try:
@@ -115,6 +174,7 @@ if __name__ == '__main__':
                 print("👋 Tạm biệt!")
                 break
             lang = detect_language(user)
+            print(f"[Detected language: {lang}]")
             answer = get_ai_response(user, lang)
             print(f"Bot: {answer}")
         except KeyboardInterrupt:
