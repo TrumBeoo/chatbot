@@ -39,25 +39,37 @@ def detect_language(text: str) -> str:
                 return 'vi'
             return 'en'
     except Exception:
-        # Enhanced fallback detection
-        text_lower = text.lower()
-        vietnamese_chars = 'àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ'
-        vietnamese_words = ['tôi', 'bạn', 'chúng', 'của', 'trong', 'một', 'có', 'được', 'này', 'đó']
-        english_words = ['the', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with']
-        
-        # Check Vietnamese characters
-        if any(char in text_lower for char in vietnamese_chars):
-            return 'vi'
-        
-        # Check Vietnamese words
-        if any(word in text_lower for word in vietnamese_words):
-            return 'vi'
-            
-        # Check English words
-        if any(word in text_lower for word in english_words):
-            return 'en'
-            
-        return 'vi'  # Default to Vietnamese
+        return _fallback_language_detection(text)
+
+def _fallback_language_detection(text: str) -> str:
+    """Enhanced fallback language detection."""
+    text_lower = text.lower().strip()
+    
+    # Vietnamese diacritics - strong indicator
+    vietnamese_chars = 'àáạảãâầấậẩẫăằắặẳẵèéẹẻẽêềếệểễìíịỉĩòóọỏõôồốộổỗơờớợởỡùúụủũưừứựửữỳýỵỷỹđ'
+    if any(char in text_lower for char in vietnamese_chars):
+        return 'vi'
+    
+    # Common Vietnamese words
+    vietnamese_words = ['tôi', 'bạn', 'chúng', 'của', 'trong', 'một', 'có', 'được', 'này', 'đó', 'là', 'và', 'với', 'cho', 'về', 'du lịch', 'quảng ninh', 'hạ long']
+    # Common English words
+    english_words = ['the', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'this', 'that', 'is', 'are', 'what', 'where', 'how', 'can', 'could', 'would', 'travel', 'tourism', 'quang ninh', 'ha long']
+    
+    # Count word matches
+    vi_score = sum(1 for word in vietnamese_words if word in text_lower)
+    en_score = sum(1 for word in english_words if word in text_lower)
+    
+    # English patterns
+    english_patterns = ['what', 'where', 'how', 'can you', 'could you', 'would you', 'tell me', 'show me']
+    if any(pattern in text_lower for pattern in english_patterns):
+        en_score += 2
+    
+    # Vietnamese patterns  
+    vietnamese_patterns = ['bạn có thể', 'cho tôi biết', 'giới thiệu', 'hãy', 'làm sao']
+    if any(pattern in text_lower for pattern in vietnamese_patterns):
+        vi_score += 2
+    
+    return 'en' if en_score > vi_score else 'vi'
 
 
 def get_ai_response(user_input: str, detected_lang: str) -> str:
@@ -103,7 +115,7 @@ def get_ai_response(user_input: str, detected_lang: str) -> str:
                 {"role": "user", "content": user_input}
             ],
             "temperature": 0.7,
-            "max_tokens": 400  # Increased for better responses
+            "max_tokens": 300  # Increased for better responses
         }
 
         response = requests.post(GROQ_API_URL, headers=headers, json=data, timeout=60)

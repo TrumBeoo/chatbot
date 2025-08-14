@@ -1,0 +1,44 @@
+[Khách sạn]
+Tên: Wyndham Legend Halong
+Địa chỉ: Số 12, đường Hạ Long, phường Bãi Cháy, thành phố Hạ Long, Quảng Ninh
+Loại: Khách sạn 5 sao
+Giá phòng: 2.500.000 - 4.000.000 VNĐ/đêm
+Tiện nghi: Hồ bơi, phòng gym, nhà hàng, quầy bar, dịch vụ spa
+Gần địa điểm: Sun World Halong Park, Bãi Cháy Beach
+
+Tên: FLC Halong Bay Golf Club & Luxury Resort
+Địa chỉ: Đường Nguyễn Văn Cừ, phường Hồng Hải, thành phố Hạ Long, Quảng Ninh
+Loại: Khu nghỉ dưỡng 5 sao
+Giá phòng: 3.000.000 - 5.500.000 VNĐ/đêm
+Tiện nghi: Sân golf, spa, hồ bơi vô cực, phòng hội nghị
+Gần địa điểm: Bảo tàng Quảng Ninh, Hòn Gai
+
+[Homestay]
+Tên: Banana and Rose Homestay
+Địa chỉ: Số 1, đường Hạ Long, Bãi Cháy, Hạ Long, Quảng Ninh
+Loại: Homestay ven biển
+Giá phòng: 500.000 - 800.000 VNĐ/đêm
+Tiện nghi: Sân vườn, bếp chung, wifi miễn phí
+Gần địa điểm: Chợ đêm Hạ Long, cầu Bãi Cháy
+
+Tên: Deja Vu House
+Địa chỉ: Số 28, ngõ 10, phố Hải Quân, phường Hồng Gai, Hạ Long, Quảng Ninh
+Loại: Homestay trung tâm
+Giá phòng: 400.000 - 700.000 VNĐ/đêm
+Tiện nghi: Quán cafe, phòng sinh hoạt chung, bếp
+Gần địa điểm: Bảo tàng Quảng Ninh, chợ Hạ Long 1
+
+[Nhà nghỉ]
+Tên: Nhà nghỉ Minh Anh
+Địa chỉ: Thị trấn Cô Tô, huyện Cô Tô, Quảng Ninh
+Loại: Nhà nghỉ bình dân
+Giá phòng: 300.000 - 500.000 VNĐ/đêm
+Tiện nghi: Wifi, tivi, dịch vụ thuê xe máy
+Gần địa điểm: Bãi tắm Tình Yêu, chợ Cô Tô
+
+Tên: Nhà nghỉ Hương Biển
+Địa chỉ: Đảo Quan Lạn, huyện Vân Đồn, Quảng Ninh
+Loại: Nhà nghỉ gần biển
+Giá phòng: 350.000 - 600.000 VNĐ/đêm
+Tiện nghi: Nhà hàng, thuê xe đạp, wifi miễn phí
+Gần địa điểm: Bãi biển Minh Châu, bãi biển Quan Lạn

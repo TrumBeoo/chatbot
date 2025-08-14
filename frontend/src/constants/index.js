@@ -15,7 +15,7 @@ export const translations = {
     welcomeTitle: 'Chào mừng đến với QBot AI!',
     welcomeSubtitle: 'Trợ lý du lịch thông minh của bạn tại Quảng Ninh',
     welcomeDescription: 'Tôi sẽ giúp bạn khám phá những điểm đến tuyệt vời, tìm kiếm nhà hàng ngon và lên kế hoạch cho chuyến du lịch hoàn hảo tại Quảng Ninh!',
-    welcomeGreeting: 'Xin chào! Tôi là QBot AI, trợ lý du lịch của bạn!',
+    welcomeGreeting: 'Xin chào! Tôi là QBot, trợ lý du lịch thông minh của bạn!',
     tryButton: 'Dùng thử ngay',
     loginPrompt: 'Đăng nhập để lưu lịch sử chat và nhận gợi ý cá nhân hóa!',
     
@@ -128,7 +128,7 @@ export const translations = {
     welcomeTitle: 'Welcome to QBot AI!',
     welcomeSubtitle: 'Your Smart Travel Assistant in Quang Ninh',
     welcomeDescription: 'I will help you discover amazing destinations, find great restaurants, and plan your perfect trip in Quang Ninh!',
-    welcomeGreeting: 'Hello! I am QBot AI, your travel assistant!',
+    welcomeGreeting: 'Hello! I am QBot, your smart travel assistant!',
     tryButton: 'Try Now',
     loginPrompt: 'Sign in to save your chat history and get personalized recommendations!',
     
